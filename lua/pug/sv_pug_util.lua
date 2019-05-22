@@ -51,7 +51,7 @@ function util.entityIsMoving( ent, speed )
 
 	if IsValid(phys) then
 		local vel = phys:GetVelocity():Distance(zero)
-		return ( vel > speed/100 ), vel
+		return ( vel > speed ), vel
 	else
 		return false, nil
 	end

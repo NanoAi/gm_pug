@@ -59,8 +59,10 @@ function PUG:Ghost( ent, ghost )
 		return
 	end
 
+	if ent.PUGGhosted then return end
 	if ent.jailWall then return end
 	if not ent.PUGBadEnt then return end
+	if not ent:IsSolid() then return end
 
 	ent.FPPAntiSpamIsGhosted = nil -- Override FPP Ghosting.
 	ent.PUGGhost = ent.PUGGhost or {}
@@ -130,7 +132,7 @@ function PUG:UnGhost( ent )
 	if not ent.PUGGhosted then return end
 
 	local trap = isTrap(ent)
-	local moving = u.entityIsMoving(ent, 700)
+	local moving = u.entityIsMoving(ent, 9)
 
 	if not ( trap or moving ) then
 		u.entityForceDrop( ent )
@@ -161,27 +163,31 @@ function PUG:UnGhost( ent )
 		ent:CollisionRulesChanged()
 		return true
 	else
+		if trap then
+			-- Only notify if something is inside this entity.
+			print("Entity Trap Detected!")
+		end
 		return false
 	end
 end
 
 hook.Add("PUG_PostPhysgunPickup", "PUGGhosting", function(_, ent, canPickup)
-	timer.Simple(0.02, function()
-		u.addJob(function()
-			if not canPickup then return end
-			if IsValid( ent ) then
-				PUG:Ghost( ent, true )
-			end
-		end)
+	u.addJob(function()
+		if not canPickup then return end
+		if IsValid( ent ) then
+			PUG:Ghost( ent, true )
+		end
 	end)
 end)
 
 hook.Add("PhysgunDrop", "PUGGhosting", function(_, ent)
-	u.addJob(function()
-		if u.isEntityHeld(ent) then return end
-		if IsValid( ent ) then
-			PUG:Ghost( ent, false )
-		end
+	timer.Simple(0.05, function()
+		u.addJob(function()
+			if u.isEntityHeld(ent) then return end
+			if IsValid( ent ) then
+				PUG:Ghost( ent, false )
+			end
+		end)
 	end)
 end)
 
