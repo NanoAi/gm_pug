@@ -130,10 +130,11 @@ function PUG:UnGhost( ent )
 	if not ent.PUGGhosted then return end
 
 	local trap = isTrap(ent)
-	local moving = u.entityIsMoving(ent)
+	local moving = u.entityIsMoving(ent, 700)
 
 	if not ( trap or moving ) then
 		u.entityForceDrop( ent )
+		u.sleepEntity( ent )
 
 		ent.APG_Ghosted = false
 		ent:DrawShadow( true )
@@ -160,29 +161,27 @@ function PUG:UnGhost( ent )
 		ent:CollisionRulesChanged()
 		return true
 	else
-		--FIXME: Add notification here!
-		print("A prop has tried to unghost, but couldn't!")
 		return false
 	end
 end
 
 hook.Add("PUG_PostPhysgunPickup", "PUGGhosting", function(_, ent, canPickup)
-	u.addJob(function()
-		if not canPickup then return end
-		if IsValid( ent ) then
-			PUG:Ghost( ent, true )
-		end
+	timer.Simple(0.02, function()
+		u.addJob(function()
+			if not canPickup then return end
+			if IsValid( ent ) then
+				PUG:Ghost( ent, true )
+			end
+		end)
 	end)
 end)
 
 hook.Add("PhysgunDrop", "PUGGhosting", function(_, ent)
-	timer.Simple(0.5, function()
-		u.addJob(function()
-			if u.isEntityHeld(ent) then return end
-			if IsValid( ent ) then
-				PUG:Ghost( ent, false )
-			end
-		end)
+	u.addJob(function()
+		if u.isEntityHeld(ent) then return end
+		if IsValid( ent ) then
+			PUG:Ghost( ent, false )
+		end
 	end)
 end)
 

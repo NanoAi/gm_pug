@@ -42,7 +42,7 @@ function util.entityForceDrop( ent )
 	end
 end
 
-function util.entityIsMoving( ent )
+function util.entityIsMoving( ent, speed )
 	if type( ent ) ~= "Entity" then return end
 	if not IsValid( ent ) then return end
 
@@ -51,9 +51,22 @@ function util.entityIsMoving( ent )
 
 	if IsValid(phys) then
 		local vel = phys:GetVelocity():Distance(zero)
-		return ( vel > 0.15 ), vel
+		return ( vel > speed/100 ), vel
 	else
 		return false, nil
+	end
+end
+
+function util.sleepEntity( ent )
+	if type( ent ) ~= "Entity" then return end
+	if not IsValid( ent ) then return end
+
+	local zero = Vector(0,0,0)
+	local phys = ent:GetPhysicsObject()
+
+	if IsValid(phys) then
+		phys:SetVelocityInstantaneous(zero)
+		phys:Sleep()
 	end
 end
 
