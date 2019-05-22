@@ -1,0 +1,5 @@
+hook.Add("InitPostEntity", "PUG_Startup", function()
+	timer.Simple(0, function()
+		include("pug/sv_pug.lua")
+	end)
+end)
