@@ -1,22 +1,24 @@
 local PUG = PUG
-local hook, timer = hook, timer
+local timer = timer
 local u = PUG.util
 
-hook.Add("PUG_SetCollisionGroup", "PUGCollision", function( ent, group )
+local hooks = {}
+
+u.addHook("PUG_SetCollisionGroup", "PUGCollision", function( ent, group )
 	local isGroupNone = ( group == COLLISION_GROUP_NONE )
 	local checkEnt = ( ent.PUGBadEnt and not PUG:isGoodEnt( ent ) )
 	if isGroupNone and checkEnt and ( not ent.PUGFrozen ) then
 		return COLLISION_GROUP_INTERACTIVE
 	end
-end)
+end, hooks)
 
-hook.Add("PUG_EnableMotion", "PUGCollision", function( ent, _, bool )
+u.addHook("PUG_EnableMotion", "PUGCollision", function( ent, _, bool )
 	if bool and ent.PUGBadEnt then
 		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
 			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE )
 		end
 	end
-end)
+end, hooks)
 
 local function isTrap( ent )
 	local check = false
@@ -55,26 +57,16 @@ local function isTrap( ent )
 	return check and true or false
 end
 
-function PUG:Ghost( ent, ghost )
-	if not ghost then
-		self:UnGhost( ent )
-		return
-	end
-
+function PUG:Ghost( ent )
 	if ent.PUGGhosted then return end
 	if ent.jailWall then return end
 	if not ent.PUGBadEnt then return end
 	if not ent:IsSolid() then return end
-
-	if type( ent.CPPIGetOwner ) == "function" then
-		if type( ent:CPPIGetOwner() ) ~= "Player" then
-			return false
-		end
-	end
+	if type( u.getCPPIOwner( ent ) ) ~= "Player" then return end
 
 	ent.FPPAntiSpamIsGhosted = nil -- Override FPP Ghosting.
 	ent.PUGGhost = ent.PUGGhost or {}
-	ent.PUGGhost.collision = ent:GetCollisionGroup()
+	ent.PUGGhost.collision = ent.PUGGhost.collision or ent:GetCollisionGroup()
 
 	-- If and old collision group was set get it.
 	if ent.OldCollisionGroup then -- FPP Compatibility
@@ -155,7 +147,6 @@ function PUG:UnGhost( ent )
 		ent:SetRenderMode( ent.PUGGhost.render or RENDERMODE_NORMAL )
 		ent:SetColor( ent.PUGGhost.colour or Color( 255, 255, 255, 255) )
 		ent:SetMaterial( ent.PUGGhost.material or '' )
-		ent.APG_oldColor = false
 
 		local newCollisionGroup = COLLISION_GROUP_INTERACTIVE
 
@@ -173,7 +164,9 @@ function PUG:UnGhost( ent )
 
 		ent:SetCollisionGroup( newCollisionGroup )
 		ent:CollisionRulesChanged()
+
 		ent.PUGGhosted = nil
+		ent.PUGGhost = nil
 
 		return true
 	else
@@ -185,30 +178,36 @@ function PUG:UnGhost( ent )
 	end
 end
 
-hook.Add("PUG_PostPhysgunPickup", "PUGGhosting", function(_, ent, canPickup)
+u.addHook("PUG_PostPhysgunPickup", "PUGGhosting", function(_, ent, canPickup)
 	u.addJob(function()
 		if not canPickup then return end
 		if IsValid( ent ) then
-			PUG:Ghost( ent, true )
+			PUG:Ghost( ent )
 			if constraint.HasConstraints( ent ) then
-				u.entityForceDrop( ent )
+				local cw = constraint.Weld
+				local denyMovement = cw(ent, Entity(0), 0, 0, 0, false, false)
+				ent.PUGWeld = denyMovement
 			end
 		end
 	end)
-end)
+end, hooks)
 
-hook.Add("PhysgunDrop", "PUGGhosting", function(_, ent)
+u.addHook("PhysgunDrop", "PUGGhosting", function(_, ent)
 	timer.Simple(0.05, function()
 		u.addJob(function()
 			if u.isEntityHeld(ent) then return end
 			if IsValid( ent ) then
-				PUG:Ghost( ent, false )
+				PUG:UnGhost( ent )
+				if ent.PUGWeld then
+					ent.PUGWeld:Remove()
+					ent.PUGWeld = nil
+				end
 			end
 		end)
 	end)
-end)
+end, hooks)
 
-hook.Add("OnEntityCreated", "PUGGhosting", function( ent )
+u.addHook("OnEntityCreated", "PUGGhosting", function( ent )
 	u.addJob(function()
 		if not ent.PUGBadEnt then return end
 		if not IsValid( ent ) then return end
@@ -219,31 +218,96 @@ hook.Add("OnEntityCreated", "PUGGhosting", function( ent )
 		ent:ForcePlayerDrop()
 		u.sleepEntity( ent )
 
-		PUG:Ghost( ent, true )
+		PUG:Ghost( ent )
 	end)
-end)
+end, hooks)
 
-hook.Add("CanProperty", "PUGGhosting", function( _, _, ent )
+u.addHook("CanProperty", "PUGGhosting", function( _, _, ent )
 	if ent.PUGGhosted then
 		--FIXME: Add Notice here!
 		return false
 	end
-end)
+end, hooks)
 
-hook.Add("CanTool", "PUGGhosting", function(_, tr, tool)
+u.addHook("CanTool", "PUGGhosting", function(_, tr, tool)
 	local ent = tr.Entity
 	if ent.PUGGhosted and tool ~= "remover" then
 		return false
 	end
-end)
+end, hooks)
+
+u.addHook("CanTool", "PUGGhosting-FadingDoors", function(ply, tr)
+	u.addJob(function()
+		local ent = tr.Entity
+
+		if IsValid(ent) then
+			if not ent.isFadingDoor then return end
+			local state = ent.fadeActive
+
+			if state then
+				ent:fadeDeactivate()
+			end
+
+			ent.oldFadeActivate = ent.oldFadeActivate or ent.fadeActivate
+			ent.oldFadeDeactivate = ent.oldFadeDeactivate or ent.fadeDeactivate
+
+			function ent:fadeActivate()
+				if hook.Run("PUG_FadingDoorToggle", self, true, ply) then
+					return
+				end
+
+				ent:oldFadeActivate()
+			end
+
+			function ent:fadeDeactivate()
+				if hook.Run("PUG_FadingDoorToggle", self, false, ply) then
+					return
+				end
+
+				ent:oldFadeDeactivate()
+				ent:SetCollisionGroup(COLLISION_GROUP_INTERACTIVE)
+			end
+
+			if state then
+				ent:fadeActivate()
+			end
+		end
+	end)
+end, hooks)
+
+u.addHook("PUG_FadingDoorToggle", "APG_FadingDoor", function(ent, isFading)
+	if ent.PUGGhosted then
+		-- Add notification
+		if isFading then
+			PUG:UnGhost( ent )
+		else
+			return true
+		end
+	end
+
+	if ent.PUGBadEnt then
+		local ply = u.getCPPIOwner( ent )
+		if type( ply ) ~= "Player" then return end
+
+		if not isFading then
+			u.addJob(function()
+				if IsValid( ply ) and IsValid( ent ) then
+					if isTrap( ent ) then
+						--FIXME: Add Notifications
+						ent.PUGGhost = ent.PUGGhost or {}
+						ent.PUGGhost.collision = COLLISION_GROUP_INTERACTIVE
+						ent:oldFadeDeactivate()
+						PUG:Ghost( ent )
+						return true
+					end
+				end
+			end)
+		end
+	end
+end, hooks)
 
 return {
-	hooks = {
-		["PUG_SetCollisionGroup"] = "PUGCollision",
-		["PUG_EnableMotion"] = "PUGCollision",
-		["PUG_PostPhysgunPickup"] = "PUGGhosting",
-		["PhysgunDrop"] = "PUGGhosting",
-	},
+	hooks = hooks,
 	settings = {
 		["GhostColour"] = "4 20 36 250",
 		["GhostsNoCollide"] = "0",

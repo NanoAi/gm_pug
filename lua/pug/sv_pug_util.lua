@@ -1,4 +1,11 @@
+local hook = hook
+local cppiOwner = false
 local util = {}
+
+do
+	local ENT = FindMetaTable("Entity")
+	cppiOwner = ENT.CPPIGetOwner
+end
 
 function util.safeSetCollisionGroup( ent, group, pObj )
 	if ent:IsPlayerHolding() then return end
@@ -25,6 +32,17 @@ function util.callOnConstraints( ent, callback )
 	for _, child in next, constrained do
 		if IsValid( child ) and child ~= ent then
 			callback( child )
+		end
+	end
+end
+
+function util.getCPPIOwner( ent )
+	if type( cppiOwner ) == "function" then
+		local owner = cppiOwner( ent )
+		if type( cppiOwner( ent ) ) ~= "Player" then
+			return false
+		else
+			return owner
 		end
 	end
 end
@@ -88,6 +106,16 @@ function util.removeEntityHolder( ent, ply )
 	ent.PUGHolding[steamID] = nil
 end
 
+function util.addHook( hookID, id, callback, store )
+	local index = #store + 1
+
+	hook.Add( hookID, id, callback )
+	store[ index ] = store[ index ] or {}
+	store[ index ][ hookID] = id
+
+	return store
+end
+
 do
 	local jobs = {}
 
@@ -102,11 +130,13 @@ do
 	end
 
 	hook.Add("Tick", "PUG_JobProcessor", function()
-		local index = #jobs
-		local job = jobs[ index ]
-		if job then
-			job()
-			util.removeJob( index )
+		for _ = 1, 25 do
+			local index = #jobs
+			local job = jobs[ index ]
+			if job then
+				job()
+				util.removeJob( index )
+			end
 		end
 	end)
 end

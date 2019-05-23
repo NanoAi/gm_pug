@@ -199,42 +199,5 @@ hook.Add("PhysgunDrop", "PUG_PhysgunDrop", function( ply, ent )
 	u.removeEntityHolder( ent, ply )
 end)
 
-local function applyPlayerHack( ply )
-	timer.Simple(0, function()
-		local phys = ply:GetPhysicsObject()
-		if IsValid(phys) then
-			phys:EnableMotion(false)
-			phys:Sleep()
-		end
-	end)
-end
-
---FIXME: Check if "PlayerInitialSpawn" is also needed.
-hook.Add("PlayerInitialSpawn", "PUG_PlayerSpawn", applyPlayerHack)
-hook.Add("PlayerSpawn", "PUG_PlayerSpawn", applyPlayerHack)
-
-hook.Add("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
-	if type(target) ~= "Player" then
-		return
-	end
-
-	local ent = dmg:GetInflictor()
-	local damageType = dmg:GetDamageType()
-
-	if ent.PUGBadEnt then
-		return true
-	else
-		if IsValid( ent ) then
-			if PUG:isGoodEnt( ent ) or ent:IsWeapon() then
-				return
-			end
-		end
-	end
-
-	if damageType == DMG_CRUSH or damageType == DMG_VEHICLE then
-		return true
-	end
-end)
-
 -- NOTE: Now that the base is setup, load the modules!
 include("pug/sv_pug_loader.lua")

@@ -3,8 +3,6 @@ PUG.modules = PUG.modules or {}
 local file, hook, timer = file, hook, timer
 local path = "pug/modules/"
 local modules = file.Find( path .. "*.lua", "LUA" )
-local u = PUG.util
-
 
 for _, fileName in next, modules do
 	if fileName then
@@ -47,12 +45,12 @@ function PUG:unLoad( moduleName )
 end
 
 local function writeData()
-	local json = util.TableToJSON( PUG.modules, true )
-	file.Write( "pugsettings.txt", json )
+	local json = util.TableToJSON( PUG.modules )
+	file.Write( "pug_settings.txt", json )
 end
 
 function PUG:saveConfig()
-	local readFile = file.Read( "pugsettings.txt", "DATA" )
+	local readFile = file.Read( "pug_settings.txt", "DATA" )
 
 	if ( not readFile ) or ( readFile == "" ) then
 		writeData()
@@ -89,8 +87,6 @@ function PUG:saveConfig()
 				print("[PUGLoader] ", k, " has been loaded!")
 			end
 		end
-
-		self.modules = data
 
 		timer.Simple(0, function()
 			writeData()
