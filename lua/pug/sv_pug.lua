@@ -1,6 +1,4 @@
 local hook, timer = hook, timer
-PUG = PUG or {}
-
 PUG.util = include("pug/sv_pug_util.lua")
 local u = PUG.util
 

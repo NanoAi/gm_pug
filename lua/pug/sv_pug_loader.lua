@@ -95,4 +95,10 @@ function PUG:saveConfig()
 end
 
 PUG:saveConfig()
+
+local loadTime = math.Round( ( SysTime() - PUG.InitAt ), 2 )
+loadTime = loadTime == 0 and "2fast4u" or loadTime
+
 print("PUG has hopped onto your server! Your physics are safe with PUG.")
+print("PUG took " .. loadTime .. " seconds to arrive!")
+print("-- [PUG] Ready! --")
