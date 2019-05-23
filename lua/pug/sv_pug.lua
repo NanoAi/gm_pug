@@ -41,6 +41,12 @@ function PUG:isBadEnt( ent )
 		return false
 	end
 
+	if type( ent.CPPIGetOwner ) == "function" then
+		if type( ent:CPPIGetOwner() ) ~= "Player" then
+			return false
+		end
+	end
+
 	if badEnts[ ent:GetClass() ] == true then
 		return true
 	end
@@ -176,9 +182,9 @@ end
 
 hook.Add("OnEntityCreated", "PUG_EntityCreated", function( ent )
 	getBadEnt( ent )
-	timer.Simple(0, function()
+	u.addJob( function()
 		hook.Run( "PUG_isBadEnt", ent, getBadEnt(ent) )
-	end)
+	end )
 end)
 
 hook.Add("PUG_PostPhysgunPickup", "main", function( ply, ent, canPickup )

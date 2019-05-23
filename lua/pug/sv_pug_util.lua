@@ -30,16 +30,15 @@ function util.callOnConstraints( ent, callback )
 end
 
 function util.entityForceDrop( ent )
-	DropEntityIfHeld( ent )
-	ent:ForcePlayerDrop()
-
-	if type(ent.PUGHolding) ~= "table" then return end
-
-	for _, ply in next, ent.PUGHolding do
-		if ply and IsValid(ply) then
-			ply:ConCommand("-attack")
+	if type(ent.PUGHolding) == "table" then
+		for _, ply in next, ent.PUGHolding do
+			if ply and IsValid(ply) then
+				ply:ConCommand("-attack")
+			end
 		end
 	end
+	DropEntityIfHeld( ent )
+	ent:ForcePlayerDrop()
 end
 
 function util.entityIsMoving( ent, speed )

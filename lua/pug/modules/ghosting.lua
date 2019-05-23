@@ -12,7 +12,9 @@ end)
 
 hook.Add("PUG_EnableMotion", "PUGCollision", function( ent, _, bool )
 	if bool and ent.PUGBadEnt then
-		ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE )
+		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
+			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE )
+		end
 	end
 end)
 
@@ -33,6 +35,7 @@ local function isTrap( ent )
 				local vCenter = v:LocalToWorld( v:OBBCenter() )
 				if center:Distance( vCenter ) < v:BoundingRadius() then
 					check = v
+					break
 				end
 			end
 		else
@@ -43,11 +46,10 @@ local function isTrap( ent )
 
 				if tr.Entity == ent then
 					check = v
+					break
 				end
 			end
 		end
-
-		if check then break end
 	end
 
 	return check and true or false
@@ -63,6 +65,12 @@ function PUG:Ghost( ent, ghost )
 	if ent.jailWall then return end
 	if not ent.PUGBadEnt then return end
 	if not ent:IsSolid() then return end
+
+	if type( ent.CPPIGetOwner ) == "function" then
+		if type( ent:CPPIGetOwner() ) ~= "Player" then
+			return false
+		end
+	end
 
 	ent.FPPAntiSpamIsGhosted = nil -- Override FPP Ghosting.
 	ent.PUGGhost = ent.PUGGhost or {}
@@ -100,7 +108,12 @@ function PUG:Ghost( ent, ghost )
 			ent.__DPPColor = nil
 		end
 
-		ent:SetColor( Color(4, 20, 36, 250) )
+		if not ent.PUGGhost.material then
+			ent.PUGGhost.material = ent:GetMaterial()
+		end
+
+		ent:SetColor( Color(4, 20, 44, 250) )
+		ent:SetMaterial("models/debug/debugwhite")
 	end)
 
 	ent.PUGGhost.render = ent:GetRenderMode()
@@ -132,17 +145,16 @@ function PUG:UnGhost( ent )
 	if not ent.PUGGhosted then return end
 
 	local trap = isTrap(ent)
-	local moving = u.entityIsMoving(ent, 9)
+	local moving = u.entityIsMoving(ent, 9.3)
 
 	if not ( trap or moving ) then
 		u.entityForceDrop( ent )
 		u.sleepEntity( ent )
-
-		ent.APG_Ghosted = false
 		ent:DrawShadow( true )
 
-		ent:SetRenderMode( ent.APG_oldRenderMode or RENDERMODE_NORMAL )
-		ent:SetColor( ent.APG_oldColor or Color( 255, 255, 255, 255) )
+		ent:SetRenderMode( ent.PUGGhost.render or RENDERMODE_NORMAL )
+		ent:SetColor( ent.PUGGhost.colour or Color( 255, 255, 255, 255) )
+		ent:SetMaterial( ent.PUGGhost.material or '' )
 		ent.APG_oldColor = false
 
 		local newCollisionGroup = COLLISION_GROUP_INTERACTIVE
@@ -161,6 +173,8 @@ function PUG:UnGhost( ent )
 
 		ent:SetCollisionGroup( newCollisionGroup )
 		ent:CollisionRulesChanged()
+		ent.PUGGhosted = nil
+
 		return true
 	else
 		if trap then
@@ -176,6 +190,9 @@ hook.Add("PUG_PostPhysgunPickup", "PUGGhosting", function(_, ent, canPickup)
 		if not canPickup then return end
 		if IsValid( ent ) then
 			PUG:Ghost( ent, true )
+			if constraint.HasConstraints( ent ) then
+				u.entityForceDrop( ent )
+			end
 		end
 	end)
 end)
@@ -189,6 +206,35 @@ hook.Add("PhysgunDrop", "PUGGhosting", function(_, ent)
 			end
 		end)
 	end)
+end)
+
+hook.Add("OnEntityCreated", "PUGGhosting", function( ent )
+	u.addJob(function()
+		if not ent.PUGBadEnt then return end
+		if not IsValid( ent ) then return end
+		if not ent:IsSolid() then return end
+		if ent:GetClass() == "gmod_hands" then return end
+
+		DropEntityIfHeld( ent )
+		ent:ForcePlayerDrop()
+		u.sleepEntity( ent )
+
+		PUG:Ghost( ent, true )
+	end)
+end)
+
+hook.Add("CanProperty", "PUGGhosting", function( _, _, ent )
+	if ent.PUGGhosted then
+		--FIXME: Add Notice here!
+		return false
+	end
+end)
+
+hook.Add("CanTool", "PUGGhosting", function(_, tr, tool)
+	local ent = tr.Entity
+	if ent.PUGGhosted and tool ~= "remover" then
+		return false
+	end
 end)
 
 return {
