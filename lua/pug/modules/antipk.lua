@@ -42,7 +42,5 @@ addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 end, hooks)
 
 return {
-	hooks = hooks,
-	settings = {
-	}
+	hooks = hooks
 }

@@ -1,4 +1,4 @@
-local hook = hook
+local istable, table, hook = istable, table, hook
 local cppiOwner = false
 local util = {}
 
@@ -48,7 +48,7 @@ function util.getCPPIOwner( ent )
 end
 
 function util.entityForceDrop( ent )
-	if type(ent.PUGHolding) == "table" then
+	if istable(ent.PUGHolding) then
 		for _, ply in next, ent.PUGHolding do
 			if ply and IsValid(ply) then
 				ply:ConCommand("-attack")
@@ -88,7 +88,7 @@ function util.sleepEntity( ent )
 end
 
 function util.isEntityHeld( ent )
-	if type(ent.PUGHolding) ~= "table" then
+	if not istable(ent.PUGHolding) then
 		return false
 	end
 	return ( next( ent.PUGHolding ) ~= nil )
@@ -104,6 +104,18 @@ function util.removeEntityHolder( ent, ply )
 	local steamID = ply:SteamID()
 	ent.PUGHolding = ent.PUGHolding or {}
 	ent.PUGHolding[steamID] = nil
+end
+
+function util.getSettings( defaults )
+	local module = PUG.currentModule or {}
+
+	if not module.data then
+		module = defaults
+	else
+		module = module.data.settings or defaults
+	end
+
+	return module
 end
 
 function util.addHook( hookID, id, callback, store )

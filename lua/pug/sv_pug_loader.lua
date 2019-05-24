@@ -18,6 +18,7 @@ end
 function PUG:load( moduleName )
 	local module = self.modules[ moduleName ]
 	if module then
+		self.currentModule = module
 		module.data = include( module.path )
 		module.enabled = true
 	end
@@ -45,7 +46,17 @@ function PUG:unLoad( moduleName )
 end
 
 local function writeData()
-	local json = util.TableToJSON( PUG.modules )
+	local data = {}
+	local json = ""
+
+	for k, v in next, PUG.modules do
+		data[ k ] = {
+			enabled = v.enabled,
+			data = { settings = v.data.settings },
+		}
+	end
+
+	json = util.TableToJSON( data )
 	file.Write( "pug_settings.txt", json )
 end
 
@@ -80,6 +91,8 @@ function PUG:saveConfig()
 				data[ k ] = v
 			end
 		end
+
+		table.Merge( self.modules, data )
 
 		for k, v in next, data do
 			if v.enabled then

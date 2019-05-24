@@ -3,6 +3,12 @@ local timer = timer
 local u = PUG.util
 
 local hooks = {}
+local settings = {
+	["GhostColour"] = {4, 20, 36, 250},
+	["GhostsNoCollide"] = 0,
+}
+
+settings = u.getSettings( settings )
 
 u.addHook("PUG_SetCollisionGroup", "PUGCollision", function( ent, group )
 	local isGroupNone = ( group == COLLISION_GROUP_NONE )
@@ -104,7 +110,7 @@ function PUG:Ghost( ent )
 			ent.PUGGhost.material = ent:GetMaterial()
 		end
 
-		ent:SetColor( Color(4, 20, 44, 250) )
+		ent:SetColor( Color( unpack( settings[ "GhostColour" ] ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 	end)
 
@@ -112,7 +118,7 @@ function PUG:Ghost( ent )
 	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
 	ent:DrawShadow( false )
 
-	if noCollide then
+	if settings[ "GhostsNoCollide" ] then
 		ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 	else
 		ent:SetCollisionGroup( COLLISION_GROUP_DEBRIS_TRIGGER )
@@ -308,8 +314,5 @@ end, hooks)
 
 return {
 	hooks = hooks,
-	settings = {
-		["GhostColour"] = "4 20 36 250",
-		["GhostsNoCollide"] = "0",
-	}
+	settings = settings,
 }
