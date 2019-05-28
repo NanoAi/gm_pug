@@ -6,19 +6,29 @@ local hooks = {}
 local settings = {
 	["GhostColour"] = {4, 20, 36, 250},
 	["GhostsNoCollide"] = 0,
+	["GroupOverride"] = 1,
 }
 
 settings = u.getSettings( settings )
 
 u.addHook("PUG_SetCollisionGroup", "PUGCollision", function( ent, group )
+	if not ( settings[ "GroupOverride" ] == 1 ) then
+		return
+	end
+
 	local isGroupNone = ( group == COLLISION_GROUP_NONE )
 	local checkEnt = ( ent.PUGBadEnt and not PUG:isGoodEnt( ent ) )
+
 	if isGroupNone and checkEnt and ( not ent.PUGFrozen ) then
 		return COLLISION_GROUP_INTERACTIVE
 	end
 end, hooks)
 
 u.addHook("PUG_EnableMotion", "PUGCollision", function( ent, _, bool )
+	if not ( settings[ "GroupOverride" ] == 1 ) then
+		return
+	end
+
 	if bool and ent.PUGBadEnt then
 		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
 			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE )
@@ -297,20 +307,20 @@ u.addHook("PUG_FadingDoorToggle", "APG_FadingDoor", function(ent, isFading)
 
 		if not isFading then
 			u.addJob(function()
-				if IsValid( ply ) and IsValid( ent ) then
-					if isTrap( ent ) then
-						--FIXME: Add Notifications
-						ent.PUGGhost = ent.PUGGhost or {}
-						ent.PUGGhost.collision = COLLISION_GROUP_INTERACTIVE
-						ent:oldFadeDeactivate()
-						PUG:Ghost( ent )
-						return true
-					end
+				if IsValid( ply ) and IsValid( ent ) and isTrap( ent ) then
+					--FIXME: Add Notifications
+					ent.PUGGhost = ent.PUGGhost or {}
+					ent.PUGGhost.collision = COLLISION_GROUP_INTERACTIVE
+					ent:oldFadeDeactivate()
+					PUG:Ghost( ent )
+					return true
 				end
 			end)
 		end
 	end
 end, hooks)
+
+_G.PUG = PUG -- Pass to global.
 
 return {
 	hooks = hooks,

@@ -119,11 +119,25 @@ function util.getSettings( defaults )
 end
 
 function util.addHook( hookID, id, callback, store )
+	assert( istable( store ) == true, "A storage table must be passed!" )
+
 	local index = #store + 1
 
 	hook.Add( hookID, id, callback )
 	store[ index ] = store[ index ] or {}
-	store[ index ][ hookID] = id
+	store[ index ][ hookID ] = id
+
+	return store
+end
+
+function util.addTimer( timerID, delay, reps, callback, store )
+	assert( istable( store ) == true, "A storage table must be passed!" )
+
+	local index = #store + 1
+
+	timer.Create( timerID, delay, reps, callback )
+	store[ index ] = store[ index ] or {}
+	store[ index ][ timerID ] = delay
 
 	return store
 end

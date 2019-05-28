@@ -4,26 +4,49 @@ local u = PUG.util
 
 -- TODO: Make badEnts & goodEnts use a Database.
 local badEnts = {
-	["prop_physics"] = true,
-	["prop_ragdoll"] = true,
-	["sent_deployableballoons"] = true,
-	["sent_streamradio"] = true,
-	["gmod_button"] = true,
-	["gmod_hoverball"] = true,
-	["gmod_thruster"] = true,
-	["gmod_wheel"] = true,
-	["gmod_poly"] = true,
-	["keypad"] = true,
+	["prop_physics"] = 0,
+	["prop_ragdoll"] = 0,
+	["sent_deployableballoons"] = 0,
+	["sent_streamradio"] = 0,
+	["gmod_button"] = 0,
+	["gmod_hoverball"] = 0,
+	["gmod_thruster"] = 0,
+	["gmod_wheel"] = 0,
+	["gmod_poly"] = 0,
+	["keypad"] = 0,
+	["wire_"] = 1,
 }
 
 local goodEnts = {
-	["gmod_hands"] = true,
+	["gmod_hands"] = 0,
 }
 
-function PUG:isBadEnt( ent )
-	if type(ent) ~= "Entity" then return false end
+local function match(self, key)
+	for k, v in next, self do
+		if v == 1 and string.gmatch(key, k)() ~= nil then
+			return true
+		end
+	end
+	return nil
+end
 
-	if not IsValid(ent) then
+setmetatable( badEnts, { __index = match } )
+
+function PUG:getEntOwner( ent )
+	if type( ent.CPPIGetOwner ) == "function" then
+		local ply = ent:CPPIGetOwner()
+		if type( ply ) ~= "Player" then
+			return false
+		else
+			return ply
+		end
+	end
+end
+
+function PUG:isBadEnt( ent )
+	if type( ent ) ~= "Entity" then return false end
+
+	if not IsValid( ent ) then
 		return false
 	end
 
@@ -39,13 +62,11 @@ function PUG:isBadEnt( ent )
 		return false
 	end
 
-	if type( ent.CPPIGetOwner ) == "function" then
-		if type( ent:CPPIGetOwner() ) ~= "Player" then
-			return false
-		end
+	if not self:getEntOwner( ent ) then
+		return false
 	end
 
-	if badEnts[ ent:GetClass() ] == true then
+	if badEnts[ ent:GetClass() ] then
 		return true
 	end
 
@@ -55,7 +76,7 @@ end
 function PUG:isGoodEnt( ent )
 	if type(ent) ~= "Entity" then return false end
 
-	if goodEnts[ ent:GetClass() ] == true then
+	if goodEnts[ ent:GetClass() ] then
 		return true
 	end
 
@@ -63,15 +84,15 @@ function PUG:isGoodEnt( ent )
 end
 
 function PUG:addBadEnt( class )
-	local typeResult = type(class)
-	assert(typeResult == "string", "string expected got " .. typeResult)
-	badEnts[class] = true
+	local typeResult = type( class )
+	assert( typeResult == "string", "string expected got " .. typeResult )
+	badEnts[ class ] = true
 end
 
 function PUG:addGoodEnt( class )
 	local typeResult = type(class)
-	assert(typeResult == "string", "string expected got " .. typeResult)
-	goodEnts[class] = true
+	assert( typeResult == "string", "string expected got " .. typeResult )
+	goodEnts[ class ] = true
 end
 
 do
@@ -94,7 +115,7 @@ do
 	PUG._SetPos = PUG._SetPos or ENT.SetPos
 
 	function ENT:SetCollisionGroup( group )
-		local getHook = hook.Run("PUG_SetCollisionGroup", self, group)
+		local getHook = hook.Run( "PUG_SetCollisionGroup", self, group )
 		group = getHook or group
 
 		if getHook ~= true then
@@ -108,9 +129,9 @@ do
 
 		if type(color) == "number" then
 			r = color
-			g = select(1, ...) or 255
-			b = select(2, ...) or 255
-			a = select(3, ...) or 255
+			g = select( 1, ... ) or 255
+			b = select( 2, ... ) or 255
+			a = select( 3, ... ) or 255
 			color = Color(r, g, b, a)
 		elseif type(color) == "table" and not IsColor(color) then
 			r = color.r or 255
