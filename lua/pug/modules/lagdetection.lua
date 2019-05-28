@@ -72,7 +72,7 @@ lag.fPanic = clean[ settings[ "PanicMethod" ] ]
 assert( type( lag.fClean ) == "function", "Invalid CleanupMethod variable" )
 assert( type( lag.fPanic ) == "function", "Invalid PanicMethod variable" )
 
-u.addTimer("PUG.LagDetection", 2, 0, function()
+u.addTimer("LagDetection", 2, 0, function()
 	PUG.lagDetectionInit = true
 	addSample( lag.delta )
 
@@ -82,7 +82,7 @@ u.addTimer("PUG.LagDetection", 2, 0, function()
 	end
 end, timers)
 
-u.addHook("Tick", "PUG.LagDetection", function()
+u.addHook("Tick", "LagDetection", function()
 	if not PUG.lagDetectionInit then
 		return
 	end

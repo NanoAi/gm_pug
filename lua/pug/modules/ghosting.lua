@@ -11,7 +11,7 @@ local settings = {
 
 settings = u.getSettings( settings )
 
-u.addHook("PUG.SetCollisionGroup", "PUG.Collision", function( ent, group )
+u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not ( settings[ "GroupOverride" ] == 1 ) then
 		return
 	end
@@ -24,7 +24,7 @@ u.addHook("PUG.SetCollisionGroup", "PUG.Collision", function( ent, group )
 	end
 end, hooks)
 
-u.addHook("PUG.EnableMotion", "PUG.Collision", function( ent, _, bool )
+u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
 	if not ( settings[ "GroupOverride" ] == 1 ) then
 		return
 	end
@@ -194,7 +194,7 @@ function PUG:UnGhost( ent )
 	end
 end
 
-u.addHook("PUG.PostPhysgunPickup", "PUG.Ghosting", function(_, ent, canPickup)
+u.addHook("PUG.PostPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 	u.addJob(function()
 		if not canPickup then return end
 		if IsValid( ent ) then
@@ -208,7 +208,7 @@ u.addHook("PUG.PostPhysgunPickup", "PUG.Ghosting", function(_, ent, canPickup)
 	end)
 end, hooks)
 
-u.addHook("PhysgunDrop", "PUG.Ghosting", function(_, ent)
+u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 	timer.Simple(0.05, function()
 		u.addJob(function()
 			if u.isEntityHeld(ent) then return end
@@ -223,7 +223,7 @@ u.addHook("PhysgunDrop", "PUG.Ghosting", function(_, ent)
 	end)
 end, hooks)
 
-u.addHook("OnEntityCreated", "PUG.Ghosting", function( ent )
+u.addHook("OnEntityCreated", "Ghosting", function( ent )
 	u.addJob(function()
 		if not ent.PUGBadEnt then return end
 		if not IsValid( ent ) then return end
@@ -238,21 +238,21 @@ u.addHook("OnEntityCreated", "PUG.Ghosting", function( ent )
 	end)
 end, hooks)
 
-u.addHook("CanProperty", "PUG.Ghosting", function( _, _, ent )
+u.addHook("CanProperty", "Ghosting", function( _, _, ent )
 	if ent.PUGGhosted then
 		--FIXME: Add Notice here!
 		return false
 	end
 end, hooks)
 
-u.addHook("CanTool", "PUG.Ghosting", function(_, tr, tool)
+u.addHook("CanTool", "Ghosting", function(_, tr, tool)
 	local ent = tr.Entity
 	if ent.PUGGhosted and tool ~= "remover" then
 		return false
 	end
 end, hooks)
 
-u.addHook("CanTool", "PUG.Ghosting.FadingDoors", function(ply, tr)
+u.addHook("CanTool", "Ghosting.FadingDoors", function(ply, tr)
 	u.addJob(function()
 		local ent = tr.Entity
 
@@ -291,7 +291,7 @@ u.addHook("CanTool", "PUG.Ghosting.FadingDoors", function(ply, tr)
 	end)
 end, hooks)
 
-u.addHook("PUG.FadingDoorToggle", "PUG.FadingDoor", function(ent, isFading)
+u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading)
 	if ent.PUGGhosted then
 		-- Add notification
 		if isFading then

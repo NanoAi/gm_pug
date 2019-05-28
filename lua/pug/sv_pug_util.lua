@@ -27,6 +27,17 @@ function util.isVehicle( ent, basic )
 	return util.isVehicle( parent, true )
 end
 
+function util.getEntOwner( ent )
+	if type( ent.CPPIGetOwner ) == "function" then
+		local ply = ent:CPPIGetOwner()
+		if type( ply ) ~= "Player" then
+			return false
+		else
+			return ply
+		end
+	end
+end
+
 function util.callOnConstraints( ent, callback )
 	local constrained = constraint.GetAllConstrainedEntities( ent )
 	for _, child in next, constrained do
@@ -123,6 +134,7 @@ function util.addHook( hookID, id, callback, store )
 	assert( istable( store ) == true, "A storage table must be passed!" )
 
 	local index = #store + 1
+	id = "PUG." .. id
 
 	hook.Add( hookID, id, callback )
 	store[ index ] = store[ index ] or {}
@@ -135,6 +147,7 @@ function util.addTimer( timerID, delay, reps, callback, store )
 	assert( istable( store ) == true, "A storage table must be passed!" )
 
 	local index = #store + 1
+	timerID = "PUG." .. timerID
 
 	timer.Create( timerID, delay, reps, callback )
 	store[ index ] = store[ index ] or {}

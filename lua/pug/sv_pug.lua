@@ -32,17 +32,6 @@ end
 
 setmetatable( badEnts, { __index = match } )
 
-function PUG:getEntOwner( ent )
-	if type( ent.CPPIGetOwner ) == "function" then
-		local ply = ent:CPPIGetOwner()
-		if type( ply ) ~= "Player" then
-			return false
-		else
-			return ply
-		end
-	end
-end
-
 function PUG:isBadEnt( ent )
 	if type( ent ) ~= "Entity" then return false end
 
@@ -62,7 +51,7 @@ function PUG:isBadEnt( ent )
 		return false
 	end
 
-	if not self:getEntOwner( ent ) then
+	if not u.getEntOwner( ent ) then
 		return false
 	end
 

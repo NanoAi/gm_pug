@@ -54,7 +54,7 @@ local function collCall(ent, data)
 	end
 end
 
-u.addHook("OnEntityCreated", "PUG.hookPhysics", function( ent )
+u.addHook("OnEntityCreated", "hookPhysics", function( ent )
 	u.addJob(function()
 		if not ent.PUGBadEnt then return end
 		if not IsValid( ent ) then return end
