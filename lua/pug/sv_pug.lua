@@ -101,7 +101,7 @@ do
 	PUG._PhysgunPickup = PUG._PhysgunPickup or GM.PhysgunPickup
 	function GM:PhysgunPickup(ply, ent)
 		local canPickup = PUG._PhysgunPickup(self, ply, ent)
-		hook.Run( "PUG_PostPhysgunPickup", ply, ent, canPickup )
+		hook.Run( "PUG.PostPhysgunPickup", ply, ent, canPickup )
 		return canPickup
 	end
 end
@@ -115,7 +115,7 @@ do
 	PUG._SetPos = PUG._SetPos or ENT.SetPos
 
 	function ENT:SetCollisionGroup( group )
-		local getHook = hook.Run( "PUG_SetCollisionGroup", self, group )
+		local getHook = hook.Run( "PUG.SetCollisionGroup", self, group )
 		group = getHook or group
 
 		if getHook ~= true then
@@ -153,7 +153,7 @@ do
 	function ENT:SetPos( pos )
 		PUG._SetPos( self, pos )
 		timer.Simple(0, function()
-			hook.Run( "PUG_PostSetPos", self, pos )
+			hook.Run( "PUG.PostSetPos", self, pos )
 		end)
 	end
 
@@ -177,7 +177,7 @@ do
 
 	function PhysObj:EnableMotion( bool )
 		local ent = self:GetEntity()
-		local hookRun = { hook.Run( "PUG_EnableMotion", ent, self, bool ) }
+		local hookRun = { hook.Run( "PUG.EnableMotion", ent, self, bool ) }
 
 		if hookRun[1] == true then return end
 		bool = hookRun[2] or bool
@@ -199,10 +199,10 @@ local function getBadEnt( ent )
 	end
 end
 
-hook.Add("OnEntityCreated", "PUG_EntityCreated", function( ent )
+hook.Add("OnEntityCreated", "PUG.EntityCreated", function( ent )
 	getBadEnt( ent )
 	u.addJob( function()
-		hook.Run( "PUG_isBadEnt", ent, getBadEnt(ent) )
+		hook.Run( "PUG.isBadEnt", ent, getBadEnt(ent) )
 	end )
 end)
 
@@ -213,7 +213,7 @@ hook.Add("PUG_PostPhysgunPickup", "main", function( ply, ent, canPickup )
 	ent.PUGPicked = true
 end)
 
-hook.Add("PhysgunDrop", "PUG_PhysgunDrop", function( ply, ent )
+hook.Add("PhysgunDrop", "PUG.PhysgunDrop", function( ply, ent )
 	ent.PUGPicked = false
 	u.removeEntityHolder( ent, ply )
 end)

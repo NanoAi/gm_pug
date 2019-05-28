@@ -15,6 +15,8 @@ local settings = {
 	["PanicMethod"] = "reset",
 }
 
+settings = u.getSettings( settings )
+
 local runOnce = true
 local skips = 0
 
@@ -31,6 +33,7 @@ local lag = {
 	trigger = settings["DetectionTrigger"] / 10,
 	panic = settings["DetectionPanicTrigger"] / 10,
 	cooldown = settings["DetectionCooldown"],
+	timeout = 0,
 	threshold = math.huge,
 	delta = 0,
 	lastTick = 0,
@@ -85,9 +88,7 @@ u.addHook("Tick", "PUG.LagDetection", function()
 	end
 
 	if runOnce then
-		u.addJob(function()
-			PUG:getLagSamples()
-		end)
+		PUG:getLagSamples()
 		runOnce = nil
 	end
 
@@ -106,7 +107,7 @@ u.addHook("Tick", "PUG.LagDetection", function()
 	local tol = ( sample.mean * 100 ) + lag.tolerance
 	lag.threshold = tol / 100
 
-	if lag.delta > lag.threshold then
+	if ( lag.delta > lag.threshold ) and ( lag.timeout < sysTime ) then
 		skips = skips + 1
 
 		print( "LAG: ", lag.delta, "Th: ", lag.threshold )
@@ -114,6 +115,7 @@ u.addHook("Tick", "PUG.LagDetection", function()
 
 		if ( lag.delta > lag.trigger ) or ( skips > lag.skips ) then
 			lag.fClean()
+			lag.timeout = sysTime + lag.cooldown
 			if ( lag.delta > lag.panic ) or ( skips > lag.pSkips )  then
 				lag.fPanic()
 			end

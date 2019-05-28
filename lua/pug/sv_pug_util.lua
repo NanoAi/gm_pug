@@ -82,7 +82,8 @@ function util.sleepEntity( ent )
 	local phys = ent:GetPhysicsObject()
 
 	if IsValid(phys) then
-		phys:SetVelocityInstantaneous(zero)
+		phys:SetVelocityInstantaneous( zero )
+		phys:AddAngleVelocity( phys:GetAngleVelocity() * -1 )
 		phys:Sleep()
 	end
 end
