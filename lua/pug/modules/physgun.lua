@@ -15,7 +15,7 @@ local noThrowing = ( settings[ "NoThrowing" ] == 1 )
 local noPhysgunReload = ( settings[ "NoPhysgunReload" ] == 1 )
 local noVehiclePickup = ( settings[ "NoVehiclePickup" ] == 1 )
 
-u.addHook("PhysgunDrop", "PUG.physgun", function( _, ent )
+u.addHook("PhysgunDrop", "physgun", function( _, ent )
 	if noThrowing then
 		if IsValid( ent ) and ent.GetPhysicsObject then
 			u.sleepEntity( ent )
@@ -23,7 +23,7 @@ u.addHook("PhysgunDrop", "PUG.physgun", function( _, ent )
 	end
 end, hooks)
 
-u.addHook("CanPlayerUnfreeze", "PUG.physgun", function( _, _, phys )
+u.addHook("CanPlayerUnfreeze", "physgun", function( _, _, phys )
 	if alwaysFrozen then
 		if IsValid( phys ) then
 			phys:EnableMotion( false )
@@ -32,7 +32,7 @@ u.addHook("CanPlayerUnfreeze", "PUG.physgun", function( _, _, phys )
 	end
 end, hooks)
 
-u.addHook("PhysgunPickup", "PUG.physgun", function( _, ent )
+u.addHook("PhysgunPickup", "physgun", function( _, ent )
 	if noVehiclePickup then
 		if IsValid( ent ) and u.isVehicle( ent ) then
 			return false
@@ -40,7 +40,7 @@ u.addHook("PhysgunPickup", "PUG.physgun", function( _, ent )
 	end
 end, hooks)
 
-u.addHook("OnEntityCreated", "PUG.physgun", function( ent )
+u.addHook("OnEntityCreated", "physgun", function( ent )
 	if not alwaysFrozen then return end
 
 	u.addJob(function()
@@ -59,7 +59,7 @@ u.addHook("OnEntityCreated", "PUG.physgun", function( ent )
 	end)
 end, hooks)
 
-u.addHook("OnPhysgunReload", "PUG.physgun", function()
+u.addHook("OnPhysgunReload", "physgun", function()
 	if alwaysFrozen or noPhysgunReload then
 		return false
 	end

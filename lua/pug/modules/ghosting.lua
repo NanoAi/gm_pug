@@ -5,11 +5,14 @@ local u = PUG.util
 local hooks = {}
 local settings = {
 	["GhostColour"] = {4, 20, 36, 250},
+	["GhostOnSetPos"] = 1,
 	["GhostsNoCollide"] = 0,
 	["GroupOverride"] = 1,
 }
 
 settings = u.getSettings( settings )
+
+local ghostSetPos = ( settings[ "GhostOnSetPos" ] == 1 )
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not ( settings[ "GroupOverride" ] == 1 ) then
@@ -194,6 +197,14 @@ function PUG:UnGhost( ent )
 	end
 end
 
+u.addHook("PUG.PostSetPos", "Ghosting", function( ent )
+	u.addJob(function()
+		if IsValid( ent ) and ent.PUGBadEnt then
+			PUG:Ghost( ent )
+		end
+	end)
+end)
+
 u.addHook("PUG.PostPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 	u.addJob(function()
 		if not canPickup then return end
@@ -250,45 +261,6 @@ u.addHook("CanTool", "Ghosting", function(_, tr, tool)
 	if ent.PUGGhosted and tool ~= "remover" then
 		return false
 	end
-end, hooks)
-
-u.addHook("CanTool", "Ghosting.FadingDoors", function(ply, tr)
-	u.addJob(function()
-		local ent = tr.Entity
-
-		if IsValid(ent) then
-			if not ent.isFadingDoor then return end
-			local state = ent.fadeActive
-
-			if state then
-				ent:fadeDeactivate()
-			end
-
-			ent.oldFadeActivate = ent.oldFadeActivate or ent.fadeActivate
-			ent.oldFadeDeactivate = ent.oldFadeDeactivate or ent.fadeDeactivate
-
-			function ent:fadeActivate()
-				if hook.Run("PUG.FadingDoorToggle", self, true, ply) then
-					return
-				end
-
-				ent:oldFadeActivate()
-			end
-
-			function ent:fadeDeactivate()
-				if hook.Run("PUG.FadingDoorToggle", self, false, ply) then
-					return
-				end
-
-				ent:oldFadeDeactivate()
-				ent:SetCollisionGroup(COLLISION_GROUP_INTERACTIVE)
-			end
-
-			if state then
-				ent:fadeActivate()
-			end
-		end
-	end)
 end, hooks)
 
 u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading)

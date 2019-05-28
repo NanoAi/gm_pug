@@ -88,10 +88,18 @@ do
 	local GM = GM or GAMEMODE
 
 	PUG._PhysgunPickup = PUG._PhysgunPickup or GM.PhysgunPickup
-	function GM:PhysgunPickup(ply, ent)
+	PUG._CanTool = PUG._CanTool or GM.CanTool
+
+	function GM:PhysgunPickup( ply, ent )
 		local canPickup = PUG._PhysgunPickup(self, ply, ent)
 		hook.Run( "PUG.PostPhysgunPickup", ply, ent, canPickup )
 		return canPickup
+	end
+
+	function GM:CanTool( ply, trace, mode )
+		local canTool = PUG._CanTool( self, ply, trace, mode )
+		hook.Run( "PUG.PostCanTool", ply, trace, mode, canTool )
+		return canTool
 	end
 end
 
