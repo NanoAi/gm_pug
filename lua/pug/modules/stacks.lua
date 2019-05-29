@@ -49,7 +49,7 @@ u.addHook("PUG.FadingDoorToggle", "stackCheck", function(ent, faded, ply)
 
 		for _, v in next, ents.FindInSphere( pos, stackArea ) do
 			if v ~= ent and IsValid(v) and v.isFadingDoor then
-				if u.getEntOwner( v ) == ply then
+				if u.getCPPIOwner( v ) == ply then
 					table.insert(doors, v)
 					count = count + 1
 				end

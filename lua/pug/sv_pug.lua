@@ -51,7 +51,7 @@ function PUG:isBadEnt( ent )
 		return false
 	end
 
-	if not u.getEntOwner( ent ) then
+	if not u.getCPPIOwner( ent ) then
 		return false
 	end
 

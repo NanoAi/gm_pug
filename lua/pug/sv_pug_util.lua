@@ -27,17 +27,6 @@ function util.isVehicle( ent, basic )
 	return util.isVehicle( parent, true )
 end
 
-function util.getEntOwner( ent )
-	if type( ent.CPPIGetOwner ) == "function" then
-		local ply = ent:CPPIGetOwner()
-		if type( ply ) ~= "Player" then
-			return false
-		else
-			return ply
-		end
-	end
-end
-
 function util.callOnConstraints( ent, callback )
 	local constrained = constraint.GetAllConstrainedEntities( ent )
 	for _, child in next, constrained do
