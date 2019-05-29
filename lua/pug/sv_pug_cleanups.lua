@@ -6,18 +6,20 @@ local clean = {}
 
 local function haltPhysEnv( callback )
 	local dataA = table.Copy( physenv.GetPerformanceSettings() )
-	local dataB = table.Copy( physenv.GetPerformanceSettings() )
+	local dataB = table.Copy( dataA )
 
 	dataA.MaxVelocity = 0
 	dataA.MaxAngularVelocity = 0
 	dataA.LookAheadTimeObjectsVsObject = 0
 
 	physenv.SetPerformanceSettings( dataA )
+	print("-- ENV SET --")
 
 	callback( function()
-		u.addJob( function()
+		timer.Simple(0, function()
 			physenv.SetPerformanceSettings( dataB )
-		end )
+			print("-- ENV RESET --")
+		end)
 	end )
 end
 

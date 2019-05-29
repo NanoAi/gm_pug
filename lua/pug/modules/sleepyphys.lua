@@ -14,7 +14,10 @@ local zero = Vector( 0, 0, 0 )
 
 local function collCall(ent, data)
 	local hit = data.HitObject
+	local hitEnt = data.HitEntity
 	local entPhys = data.PhysObject
+
+	if hitEnt == Entity(0) then return end
 
 	if IsValid( ent ) and IsValid( hit ) and IsValid( entPhys ) then
 		ent["frzr9k"] = ent["frzr9k"] or {}

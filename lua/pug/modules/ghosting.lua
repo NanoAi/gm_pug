@@ -203,7 +203,7 @@ u.addHook("PUG.PostSetPos", "Ghosting", function( ent )
 			PUG:Ghost( ent )
 		end
 	end)
-end)
+end, hooks)
 
 u.addHook("PUG.PostPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 	u.addJob(function()

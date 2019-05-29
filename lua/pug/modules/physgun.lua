@@ -63,7 +63,7 @@ u.addHook("OnPhysgunReload", "physgun", function()
 	if alwaysFrozen or noPhysgunReload then
 		return false
 	end
-end)
+end, hooks)
 
 return {
 	hooks = hooks,
