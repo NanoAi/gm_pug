@@ -1,4 +1,4 @@
-local istable, table, hook = istable, table, hook
+local istable, hook = istable, hook
 local cppiOwner = false
 local util = {}
 
@@ -113,7 +113,7 @@ function util.getSettings( defaults )
 	if not module.data then
 		module = defaults
 	else
-		module = module.data.settings or defaults
+		module = table.Merge( module.data.settings or {}, defaults )
 	end
 
 	return module

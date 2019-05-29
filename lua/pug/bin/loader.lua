@@ -9,6 +9,7 @@ for _, fileName in next, modules do
 		local niceName = string.gsub(fileName, "%.lua", "")
 		PUG.modules[ niceName ] = {
 			enabled = false,
+			loaded = false,
 			path = path .. fileName,
 			data = {}
 		}
@@ -21,23 +22,31 @@ function PUG:load( moduleName )
 		self.currentModule = module
 		module.data = include( module.path )
 		module.enabled = true
+		module.loaded = true
 	end
 end
 
 function PUG:unLoad( moduleName )
 	local module = self.modules[ moduleName ]
-	if module and next(module.data) == 1 then
+	if module and next( module.data ) then
 		local data = module.data
 
-		for _, hookID in next, data.hooks do
-			hook.Remove(hookID)
+		for _, getTable in next, data.hooks do
+			for callerID, hookID in next, getTable do
+				hook.Remove(callerID, hookID)
+			end
 		end
 
-		for _, timerID in next, data.timers do
-			timer.Remove(timerID)
+		if type( data.timers ) == "table" then
+			for _, getTable in next, data.timers do
+				for _, timerID in next, getTable do
+					timer.Remove( timerID )
+				end
+			end
 		end
 
 		module.enabled = false
+		module.loaded = false
 	else
 		local emsg = "The module " .. moduleName .. " doesn't exist or is "
 		emsg = emsg .. "invalid."
@@ -92,12 +101,17 @@ function PUG:saveConfig()
 			end
 		end
 
-		table.Merge( self.modules, data )
+		self.modules = table.Merge( self.modules, data )
 
-		for k, v in next, data do
-			if v.enabled then
-				self:load(k)
+		for k, v in next, self.modules do
+			if v.enabled and not v.loaded then
+				self:load( k )
 				print("[PUGLoader] ", k, " has been loaded!")
+			else
+				if v.loaded and not v.enabled then
+					self:unLoad( k )
+					print("[PUGLoader] ", k, " has been removed!")
+				end
 			end
 		end
 

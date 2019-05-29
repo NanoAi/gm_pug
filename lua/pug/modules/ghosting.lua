@@ -14,7 +14,7 @@ local settings = {
 settings = u.getSettings( settings )
 
 local ghostSetPos = ( settings[ "GhostOnSetPos" ] == 1 )
-local ghostOnSpawn = ( settings[ "GhostOnSetPos" ] == 1 )
+local ghostOnSpawn = ( settings[ "GhostOnSpawn" ] == 1 )
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not ( settings[ "GroupOverride" ] == 1 ) then

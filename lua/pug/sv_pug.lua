@@ -1,5 +1,5 @@
 local hook, timer = hook, timer
-PUG.util = include("pug/sv_pug_util.lua")
+PUG.util = include("pug/bin/util.lua")
 local u = PUG.util
 
 -- TODO: Make badEnts & goodEnts use a Database.
@@ -216,4 +216,4 @@ hook.Add("PhysgunDrop", "PUG.PhysgunDrop", function( ply, ent )
 end)
 
 -- NOTE: Now that the base is setup, load the modules!
-include("pug/sv_pug_loader.lua")
+include("pug/bin/loader.lua")

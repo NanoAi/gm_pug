@@ -64,7 +64,7 @@ local function addSample( delta )
 	end
 end
 
-local clean = include("pug/sv_pug_cleanups.lua")
+local clean = include("pug/bin/cleanups.lua")
 
 lag.fClean = clean[ settings[ "CleanupMethod" ] ]
 lag.fPanic = clean[ settings[ "PanicMethod" ] ]
