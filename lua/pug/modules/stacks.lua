@@ -15,12 +15,19 @@ local stackSize = settings[ "MaxStackSize" ]
 local function checkStack( ent, pcount )
 	if not ent.PUGBadEnt then return end
 
-	local efound = ents.FindInSphere( ent:GetPos(), stackArea )
+	local bRadius = ( ent:BoundingRadius() * 0.85 )
+	local efound = ents.FindInSphere( ent:GetPos(), bRadius + stackArea )
 	local count = 0
 
 	for _, v in next, efound do
 		if v.PUGBadEnt then
-			count = count + 1
+			local pos = v:GetPos()
+			local trace = { start = pos, endpos = pos, filter = v }
+			local tr = util.TraceEntity( trace, v )
+
+			if IsValid( tr.Entity ) and tr.Entity.PUGBadEnt then
+				count = count + 1
+			end
 		end
 	end
 

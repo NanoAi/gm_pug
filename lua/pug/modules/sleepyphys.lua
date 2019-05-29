@@ -17,6 +17,7 @@ local function collCall(ent, data)
 	local entPhys = data.PhysObject
 
 	if hitEnt == Entity(0) then return end
+	if not hitEnt.PUGBadEnt then return end
 
 	if IsValid( ent ) and IsValid( hit ) and IsValid( entPhys ) then
 		if entPhys:IsAsleep() then return end
