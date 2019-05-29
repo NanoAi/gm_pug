@@ -39,7 +39,7 @@ function PUG:unLoad( moduleName )
 
 		if type( data.timers ) == "table" then
 			for _, getTable in next, data.timers do
-				for _, timerID in next, getTable do
+				for timerID in next, getTable do
 					timer.Remove( timerID )
 				end
 			end
