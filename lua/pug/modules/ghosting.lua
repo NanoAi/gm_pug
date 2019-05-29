@@ -235,7 +235,7 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 end, hooks)
 
 u.addHook("OnEntityCreated", "Ghosting", function( ent )
-	u.addJob(function()
+	timer.Simple(0.1, function()
 		if not ent.PUGBadEnt then return end
 		if not IsValid( ent ) then return end
 		if not ent:IsSolid() then return end
