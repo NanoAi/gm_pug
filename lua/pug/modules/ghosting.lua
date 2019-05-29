@@ -6,6 +6,7 @@ local hooks = {}
 local settings = {
 	["GhostColour"] = {4, 20, 36, 250},
 	["GhostOnSetPos"] = 1,
+	["GhostOnSpawn"] = 1,
 	["GhostsNoCollide"] = 0,
 	["GroupOverride"] = 1,
 }
@@ -13,6 +14,7 @@ local settings = {
 settings = u.getSettings( settings )
 
 local ghostSetPos = ( settings[ "GhostOnSetPos" ] == 1 )
+local ghostOnSpawn = ( settings[ "GhostOnSetPos" ] == 1 )
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not ( settings[ "GroupOverride" ] == 1 ) then
@@ -198,6 +200,7 @@ function PUG:UnGhost( ent )
 end
 
 u.addHook("PUG.PostSetPos", "Ghosting", function( ent )
+	if not ghostSetPos then return end
 	u.addJob(function()
 		if IsValid( ent ) and ent.PUGBadEnt then
 			PUG:Ghost( ent )
@@ -235,6 +238,8 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 end, hooks)
 
 u.addHook("OnEntityCreated", "Ghosting", function( ent )
+	if not ghostOnSpawn then return end
+
 	timer.Simple(0.1, function()
 		if not ent.PUGBadEnt then return end
 		if not IsValid( ent ) then return end
