@@ -8,9 +8,8 @@ local settings = {
 
 settings = u.getSettings( settings )
 
-local maxCollisions = settings[ "MaxObjectCollisions" ]
-local cooldown = settings[ "Cooldown" ]
-local zero = Vector( 0, 0, 0 )
+local maxCollisions = settings[ "MaxObjectCollisions" ] or 23
+local cooldown = settings[ "Cooldown" ] or 5
 
 local function collCall(ent, data)
 	local hit = data.HitObject
@@ -20,6 +19,9 @@ local function collCall(ent, data)
 	if hitEnt == Entity(0) then return end
 
 	if IsValid( ent ) and IsValid( hit ) and IsValid( entPhys ) then
+		if entPhys:IsAsleep() then return end
+		if not entPhys:IsMotionEnabled() then return end
+
 		ent["frzr9k"] = ent["frzr9k"] or {}
 
 		local obj = ent["frzr9k"]
@@ -30,10 +32,9 @@ local function collCall(ent, data)
 
 		if obj.collisions > maxCollisions then
 			obj.collisions = 0
+			ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 			for _, e in next, { entPhys, hit } do
-				e:SetVelocityInstantaneous( zero )
-				e:AddAngleVelocity( e:GetAngleVelocity() * -1 )
-				e:Sleep()
+				e:EnableMotion( false )
 			end
 		end
 
