@@ -142,10 +142,15 @@ function PUG:Ghost( ent )
 	do -- Fix magic surfing
 		local phys = ent:GetPhysicsObject()
 		if IsValid(phys) then
+			local hasMotion = phys:IsMotionEnabled()
+
 			phys:EnableCollisions( false )
+			phys:EnableMotion( false )
+
 			timer.Simple(0, function()
 				if IsValid(phys) then
 					phys:EnableCollisions( true )
+					phys:EnableMotion( hasMotion )
 				end
 			end)
 		end
