@@ -189,6 +189,8 @@ net.Receive("pug.notify", function()
 	str = language.GetPhrase( str ) or str
 
 	notification.AddLegacy( str, type, length )
+	print( "NOTIFY: ", str )
+
 	notifyDelay = CurTime() + (length * 0.45)
 end)
 
