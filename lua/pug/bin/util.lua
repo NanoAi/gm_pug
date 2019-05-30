@@ -109,11 +109,12 @@ end
 
 function util.getSettings( defaults )
 	local module = PUG.currentModule or {}
+	-- local path = module.path
 
 	if not module.data then
 		module = defaults
 	else
-		module = table.Merge( module.data.settings or {}, defaults )
+		module = table.Merge( defaults, module.data.settings or {} )
 	end
 
 	return module

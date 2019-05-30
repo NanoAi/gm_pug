@@ -104,7 +104,7 @@ function PUG:saveConfig()
 		self.modules = table.Merge( self.modules, data )
 
 		for k, v in next, self.modules do
-			if v.enabled and not v.loaded then
+			if v.enabled then
 				self:load( k )
 				print("[PUGLoader] ", k, " has been loaded!")
 			else
@@ -122,6 +122,7 @@ function PUG:saveConfig()
 end
 
 PUG:saveConfig()
+include( "pug/bin/network.lua" )
 
 if not PUG.hasLoaded then
 	local loadTime = math.Round( ( SysTime() - PUG.InitAt ), 2 )
