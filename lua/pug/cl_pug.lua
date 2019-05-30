@@ -17,7 +17,7 @@ local function showSettings( data, len )
 				node.key = k
 				node.value = v
 
-				function node:DoRightClick()
+				function node:DoClick()
 					local enabled = rData[ self.key ].enabled
 					enabled = ( not enabled )
 
@@ -162,3 +162,5 @@ end)
 net.Receive("pug.send", function( len )
 	showSettings( net.ReadData( len ), len )
 end)
+
+concommand.Add("pug_reload_menu", init)
