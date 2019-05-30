@@ -139,7 +139,9 @@ function PUG:Ghost( ent )
 	if ghostNoCollide then
 		ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 	else
-		ent:SetCollisionGroup( COLLISION_GROUP_DEBRIS_TRIGGER )
+		if ent.PUGGhost.collision ~= COLLISION_GROUP_WORLD then
+			ent:SetCollisionGroup( COLLISION_GROUP_DEBRIS_TRIGGER )
+		end
 	end
 
 	do -- Fix magic surfing
