@@ -13,10 +13,11 @@ local settings = {
 
 settings = u.getSettings( settings )
 
-local ghostSetPos = settings[ "GhostOnSetPos" ]
-local ghostOnSpawn = settings[ "GhostOnSpawn" ]
-local ghostNoCollide = settings[ "GhostNoCollide" ]
-local groupOverride = settings[ "GroupOverride" ]
+local ghostColour 		= settings[ "GhostColour" ]
+local ghostSetPos 		= settings[ "GhostOnSetPos" ]
+local ghostOnSpawn 		= settings[ "GhostOnSpawn" ]
+local ghostNoCollide 	= settings[ "GhostNoCollide" ]
+local groupOverride 	= settings[ "GroupOverride" ]
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not groupOverride then
@@ -36,7 +37,7 @@ u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
 		return
 	end
 
-	if bool and ent.PUGBadEnt then
+	if bool and ent.PUGBadEnt and not ent.PUGGhosted then
 		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
 			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE )
 		end
@@ -127,7 +128,7 @@ function PUG:Ghost( ent )
 			ent.PUGGhost.material = ent:GetMaterial()
 		end
 
-		ent:SetColor( Color( unpack( settings[ "GhostColour" ] ) ) )
+		ent:SetColor( Color( unpack( ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 	end)
 
