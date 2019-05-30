@@ -72,10 +72,16 @@ local function showSettings( data, len )
 										table.insert( new, n )
 									end)
 									entry = new
-								else
+								end
+
+								if option.type == "number" then
 									self:GetValue():gsub('[0-9]+', function(n)
 										entry = n
 									end)
+								end
+
+								if option.type == "string" then
+									entry = self:GetValue()
 								end
 
 								rData[ node.key ].data.settings[ option.key ] = entry
@@ -161,6 +167,29 @@ end)
 
 net.Receive("pug.send", function( len )
 	showSettings( net.ReadData( len ), len )
+end)
+
+language.Add("pug_ghost", "Ghosted entities have limited interactability")
+language.Add("pug_entfrozen", "Target entity frozen")
+language.Add("pug_tool2fast", "You are using your tool gun too fast, slow down!")
+language.Add("pug_toolworld", "You may not use the tool gun on the world")
+CreateConVar("pug_enabled", "1", FCVAR_ARCHIVE)
+
+local notifyDelay = 0
+net.Receive("pug.notify", function()
+	if not GetConVar( "pug_enabled" ):GetBool() then
+		return
+	end
+
+	if notifyDelay > CurTime() then
+		return
+	end
+
+	local str, type, length = net.ReadString(), net.ReadInt(4), net.ReadInt(4)
+	str = language.GetPhrase( str ) or str
+
+	notification.AddLegacy( str, type, length )
+	notifyDelay = CurTime() + (length * 0.45)
 end)
 
 concommand.Add("pug_reload_menu", init)

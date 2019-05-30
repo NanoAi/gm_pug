@@ -58,7 +58,7 @@ u.addHook("PUG.PostCanTool", "ToolSpamControl", function( ply, _, _, canTool )
 			data.toolDelay = data.curTime + delay
 			if not data.wasNotified then
 				data.wasNotified = true
-				--FIXME: Add notification here
+				PUG:Notify( "pug_tool2fast", 1, 5, ply )
 			end
 
 			return false
@@ -70,16 +70,16 @@ u.addHook("PUG.PostCanTool", "ToolSpamControl", function( ply, _, _, canTool )
 	end
 end, hooks)
 
-u.addHook("CanTool", "ToolWorldControl", function(_, tr)
+u.addHook("CanTool", "ToolWorldControl", function(ply, tr)
 	if blockToolWorld then
 		if tr.HitWorld then
-			-- FIXME: Add notification here.
+			PUG:Notify( "pug_toolworld", 1, 5, ply )
 			return false
 		end
 	end
 end, hooks)
 
-u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(_, tr, _, canTool)
+u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool)
 	if not canTool then return end
 	if not toolFreezes then return end
 
@@ -91,6 +91,7 @@ u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(_, tr, _, canTool)
 			phys = ent:GetPhysicsObject()
 			if IsValid(phys) and phys:IsMotionEnabled() then
 				phys:EnableMotion( false )
+				PUG:Notify( "pug_entfrozen", 1, 1, ply )
 			end
 		end
 	end)

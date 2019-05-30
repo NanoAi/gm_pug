@@ -200,8 +200,7 @@ function PUG:UnGhost( ent )
 		return true
 	else
 		if trap then
-			-- Only notify if something is inside this entity.
-			print("Entity Trap Detected!")
+			u.notifyOwner( "pug_istrap", NOTIFY_ERROR, 4, ent )
 		end
 		return false
 	end
@@ -264,7 +263,7 @@ end, hooks)
 
 u.addHook("CanProperty", "Ghosting", function( _, _, ent )
 	if ent.PUGGhosted then
-		--FIXME: Add Notice here!
+		u.notifyOwner( "pug_ghost", 1, 4, ent )
 		return false
 	end
 end, hooks)
@@ -272,28 +271,23 @@ end, hooks)
 u.addHook("CanTool", "Ghosting", function(_, tr, tool)
 	local ent = tr.Entity
 	if ent.PUGGhosted and tool ~= "remover" then
+		u.notifyOwner( "pug_ghost", 1, 4, ent )
 		return false
 	end
 end, hooks)
 
-u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading)
+u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
 	if ent.PUGGhosted then
-		-- Add notification
-		if isFading then
-			PUG:UnGhost( ent )
-		else
-			return true
-		end
+		return true
 	end
 
 	if ent.PUGBadEnt then
-		local ply = u.getCPPIOwner( ent )
 		if type( ply ) ~= "Player" then return end
 
 		if not isFading then
 			u.addJob(function()
 				if IsValid( ply ) and IsValid( ent ) and isTrap( ent ) then
-					--FIXME: Add Notifications
+					PUG:Notify( "pug_doorghost", 1, 5, ply )
 					ent.PUGGhost = ent.PUGGhost or {}
 					ent.PUGGhost.collision = COLLISION_GROUP_INTERACTIVE
 					ent:oldFadeDeactivate()

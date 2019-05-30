@@ -47,6 +47,13 @@ function util.getCPPIOwner( ent )
 	end
 end
 
+function util.notifyOwner( msg, msgType, length, ent )
+	local owner = util.getCPPIOwner( ent )
+	if owner and IsValid( owner ) then
+		PUG:Notify( msg, msgType, length, owner )
+	end
+end
+
 function util.entityForceDrop( ent )
 	if istable(ent.PUGHolding) then
 		for _, ply in next, ent.PUGHolding do
