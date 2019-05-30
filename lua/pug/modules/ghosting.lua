@@ -5,19 +5,21 @@ local u = PUG.util
 local hooks = {}
 local settings = {
 	["GhostColour"] = {4, 20, 36, 250},
-	["GhostOnSetPos"] = 1,
-	["GhostOnSpawn"] = 1,
-	["GhostsNoCollide"] = 0,
-	["GroupOverride"] = 1,
+	["GhostOnSetPos"] = true,
+	["GhostOnSpawn"] = true,
+	["GhostNoCollide"] = false,
+	["GroupOverride"] = true,
 }
 
 settings = u.getSettings( settings )
 
-local ghostSetPos = ( settings[ "GhostOnSetPos" ] == 1 )
-local ghostOnSpawn = ( settings[ "GhostOnSpawn" ] == 1 )
+local ghostSetPos = settings[ "GhostOnSetPos" ]
+local ghostOnSpawn = settings[ "GhostOnSpawn" ]
+local ghostNoCollide = settings[ "GhostNoCollide" ]
+local groupOverride = settings[ "GroupOverride" ]
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
-	if not ( settings[ "GroupOverride" ] == 1 ) then
+	if not groupOverride then
 		return
 	end
 
@@ -30,7 +32,7 @@ u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 end, hooks)
 
 u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
-	if not ( settings[ "GroupOverride" ] == 1 ) then
+	if not groupOverride then
 		return
 	end
 
@@ -133,7 +135,7 @@ function PUG:Ghost( ent )
 	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
 	ent:DrawShadow( false )
 
-	if settings[ "GhostsNoCollide" ] then
+	if ghostNoCollide then
 		ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 	else
 		ent:SetCollisionGroup( COLLISION_GROUP_DEBRIS_TRIGGER )

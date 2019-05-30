@@ -1,3 +1,5 @@
+AddCSLuaFile("pug/cl_pug.lua")
+
 PUG = PUG or {}
 
 hook.Add("InitPostEntity", "PUG_Startup", function()

@@ -2,18 +2,18 @@ local u = PUG.util
 
 local hooks = {}
 local settings = {
-	["AlwaysFrozen"] = 0,
-	["NoThrowing"] = 0,
-	["NoPhysgunReload"] = 0,
-	["NoVehiclePickup"] = 0,
+	["AlwaysFrozen"] = false,
+	["NoThrowing"] = false,
+	["NoPhysgunReload"] = false,
+	["NoVehiclePickup"] = false,
 }
 
 settings = u.getSettings( settings )
 
-local alwaysFrozen = ( settings[ "AlwaysFrozen" ] == 1 )
-local noThrowing = ( settings[ "NoThrowing" ] == 1 )
-local noPhysgunReload = ( settings[ "NoPhysgunReload" ] == 1 )
-local noVehiclePickup = ( settings[ "NoVehiclePickup" ] == 1 )
+local alwaysFrozen 		= settings[ "AlwaysFrozen" ]
+local noThrowing 		= settings[ "NoThrowing" ]
+local noPhysgunReload 	= settings[ "NoPhysgunReload" ]
+local noVehiclePickup 	= settings[ "NoVehiclePickup" ]
 
 u.addHook("PhysgunDrop", "physgun", function( _, ent )
 	if noThrowing then

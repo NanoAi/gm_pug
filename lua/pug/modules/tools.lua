@@ -2,22 +2,22 @@ local u = PUG.util
 
 local hooks = {}
 local settings = {
-	["AddFadingDoorHooks"] = 1,
-	["BlockToolUseOnWorld"] = 1,
-	["ToolFreezes"] = 0,
-	["BlockToolSpam"] = 1,
+	["AddFadingDoorHooks"] = true,
+	["BlockToolUseOnWorld"] = true,
+	["BlockToolSpam"] = true,
+	["ToolFreezes"] = false,
 	["SpamToolDelay"] = 1,
 	["SpamToolRate"] = 7,
 }
 
 settings = u.getSettings( settings )
 
-local addFadingDoorHooks = ( settings[ "AddFadingDoorHooks" ] == 1 )
-local blockToolWorld = ( settings[ "BlockToolUseOnWorld" ] == 1 )
-local blockToolSpam = ( settings[ "BlockToolSpam" ] == 1 )
-local toolFreezes = ( settings[ "BlockToolUnfreeze" ] == 1 )
-local toolDelay = settings[ "SpamToolDelay" ]
-local toolRate = settings[ "SpamToolRate" ]
+local addFadingDoorHooks 	= settings[ "AddFadingDoorHooks" ]
+local blockToolWorld 		= settings[ "BlockToolUseOnWorld" ]
+local blockToolSpam 		= settings[ "BlockToolSpam" ]
+local toolFreezes 			= settings[ "ToolFreezes" ]
+local toolDelay 			= settings[ "SpamToolDelay" ]
+local toolRate 				= settings[ "SpamToolRate" ]
 
 u.addHook("PUG.PostCanTool", "ToolSpamControl", function( ply, _, _, canTool )
 	if not canTool then return end
