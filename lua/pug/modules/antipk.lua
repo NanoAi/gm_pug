@@ -18,6 +18,12 @@ end
 addHook("PlayerInitialSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
 addHook("PlayerSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
 
+for _, ply in next, player.GetAll() do
+	if IsValid( ply ) then
+		applyPlayerHack( ply )
+	end
+end
+
 addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 	if type(target) ~= "Player" then
 		return
