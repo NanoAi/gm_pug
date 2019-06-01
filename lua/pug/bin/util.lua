@@ -81,7 +81,7 @@ function util.entityIsMoving( ent, speed )
 	end
 end
 
-function util.sleepEntity( ent )
+function util.sleepEntity( ent, dontSleep )
 	if type( ent ) ~= "Entity" then return end
 	if not IsValid( ent ) then return end
 
@@ -91,7 +91,20 @@ function util.sleepEntity( ent )
 	if IsValid(phys) then
 		phys:SetVelocityInstantaneous( zero )
 		phys:AddAngleVelocity( phys:GetAngleVelocity() * -1 )
-		phys:Sleep()
+		if not dontSleep then
+			phys:Sleep()
+		end
+	end
+end
+
+function util.freezeEntity( ent )
+	if type( ent ) ~= "Entity" then return end
+	if not IsValid( ent ) then return end
+
+	local phys = ent:GetPhysicsObject()
+
+	if IsValid(phys) then
+		phys:EnableMotion( false )
 	end
 end
 

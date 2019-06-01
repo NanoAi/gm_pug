@@ -18,7 +18,7 @@ local noVehiclePickup 	= settings[ "NoVehiclePickup" ]
 u.addHook("PhysgunDrop", "physgun", function( _, ent )
 	if noThrowing then
 		if IsValid( ent ) and ent.GetPhysicsObject then
-			u.sleepEntity( ent )
+			u.sleepEntity( ent, true )
 		end
 	end
 end, hooks)
