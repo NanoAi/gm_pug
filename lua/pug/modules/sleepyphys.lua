@@ -34,7 +34,10 @@ local function collCall(ent, data)
 		if obj.collisions > maxCollisions then
 			obj.collisions = 0
 			if u.checkEntity( ent ) then
-				ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
+				u.addJob(function()
+					ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
+					ent:CollisionRulesChanged()
+				end)
 				for _, e in next, { entPhys, hit } do
 					e:EnableMotion( false )
 				end

@@ -74,14 +74,14 @@ local function showSettings( data, len )
 								if option.type == "table" then
 									local new = {}
 									self:GetValue():gsub('[0-9]+', function(n)
-										table.insert( new, n )
+										table.insert( new, tonumber( n ) )
 									end)
 									entry = new
 								end
 
 								if option.type == "number" then
 									self:GetValue():gsub('[0-9]+', function(n)
-										entry = n
+										entry = tonumber( n )
 									end)
 								end
 
