@@ -3,6 +3,16 @@ local dtree = {}
 local readFile = ""
 local rData = {}
 
+local function lerpColor(frac, from, to)
+	local col = Color(
+		Lerp(frac,from.r,to.r),
+		Lerp(frac,from.g,to.g),
+		Lerp(frac,from.b,to.b),
+		Lerp(frac,from.a,to.a)
+	)
+	return col
+end
+
 local function showSettings( data, len )
 	dtree:Clear()
 
@@ -62,7 +72,12 @@ local function showSettings( data, len )
 							TextEntry:Dock( RIGHT )
 							TextEntry:SetText( tostring( option.value ) )
 							TextEntry:SetWide( 100 )
-							TextEntry.OnEnter = function( self )
+
+							function TextEntry:OnChange()
+								option.Icon:SetImage( "icon16/textfield_rename.png" )
+							end
+
+							function TextEntry:OnEnter()
 								local entry = rData[ node.key ].data.settings
 								entry = entry[ option.key ]
 
@@ -84,6 +99,7 @@ local function showSettings( data, len )
 									entry = self:GetValue()
 								end
 
+								option.Icon:SetImage( "icon16/disk.png" )
 								rData[ node.key ].data.settings[ option.key ] = entry
 							end
 						end

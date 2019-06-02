@@ -69,13 +69,17 @@ local function writeData()
 	file.Write( "pug_settings.txt", json )
 end
 
-function PUG:saveConfig()
+function PUG:saveConfig( data )
 	local readFile = file.Read( "pug_settings.txt", "DATA" )
 
 	if ( not readFile ) or ( readFile == "" ) then
 		writeData()
 	else
-		local data = util.JSONToTable( readFile )
+		if type( data ) == "string" then
+			data = util.JSONToTable( data )
+		else
+			data = util.JSONToTable( readFile )
+		end
 
 		if not data then
 			local emsg = "Your custom settings have not been loaded "

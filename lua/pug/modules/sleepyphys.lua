@@ -2,14 +2,14 @@ local u = PUG.util
 
 local hooks = {}
 local settings = {
-	["MaxObjectCollisions"] = 23,
-	["Cooldown"] = 5,
+	["MaxObjectCollisions"] = 42,
+	["Cooldown"] = 3,
 }
 
 settings = u.getSettings( settings )
 
-local maxCollisions = settings[ "MaxObjectCollisions" ] or 23
-local cooldown = settings[ "Cooldown" ] or 5
+local maxCollisions = settings[ "MaxObjectCollisions" ]
+local cooldown = settings[ "Cooldown" ]
 
 local function collCall(ent, data)
 	local hit = data.HitObject
@@ -33,27 +33,16 @@ local function collCall(ent, data)
 
 		if obj.collisions > maxCollisions then
 			obj.collisions = 0
-			ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
-			for _, e in next, { entPhys, hit } do
-				e:EnableMotion( false )
+			if u.checkEntity( ent ) then
+				ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
+				for _, e in next, { entPhys, hit } do
+					e:EnableMotion( false )
+				end
 			end
 		end
 
 		if obj.collisionTime < obj.lastCollision then
-			local subtract = 1
-			local mem = obj.collisionTime
-
-			while true do
-				mem = mem + 5
-				subtract = subtract + 1
-				if mem >= obj.lastCollision then
-					break
-				end
-			end
-
-			obj.collisions = ( obj.collisions - subtract )
-			obj.collisions = ( obj.collisions > 1 ) and obj.collisions or 1
-
+			obj.collisions = 1
 			obj.collisionTime = ( CurTime() + cooldown )
 		end
 	end

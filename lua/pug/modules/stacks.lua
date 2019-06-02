@@ -2,7 +2,7 @@ local u = PUG.util
 
 local hooks = {}
 local settings = {
-	["StackArea"] = 75,
+	["StackArea"] = 25,
 	["MaxStackSize"] = 7,
 	["FadingDoorsOnly"] = false,
 	["ShouldRemove"] = true,
@@ -16,11 +16,14 @@ local stackSize = settings[ "MaxStackSize" ]
 local fadingDoorsOnly = settings[ "FadingDoorsOnly" ]
 local shouldRemove = settings[ "shouldRemove" ]
 
+local collDebris = COLLISION_GROUP_DEBRIS_TRIGGER
+local collWorld = COLLISION_GROUP_WORLD
+
 local function rem( ent )
 	if shouldRemove then
 		safeRemoveEntity( ent )
 	else
-		ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
+		ent:SetCollisionGroup( collWorld )
 		u.freezeEntity( ent )
 	end
 end
@@ -40,7 +43,8 @@ local function checkStack( ent, pcount )
 			local tEnt = tr.Entity
 
 			if IsValid( tEnt ) and tEnt.PUGBadEnt then
-				if tEnt:GetCollisionGroup() ~= COLLISION_GROUP_WORLD then
+				local group = tEnt:GetCollisionGroup()
+				if group ~= collWorld and group ~= collDebris then
 					count = count + 1
 				end
 			end

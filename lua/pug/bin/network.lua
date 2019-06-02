@@ -117,13 +117,12 @@ net.Receive("pug.take", function( len, ply )
 
 		if data then
 			data = util.Decompress( data, len )
-			file.Write( "pug_settings.txt", data )
-			timer.Simple(0, function()
-				local msg = "PUG Settings Updated "
-				msg = msg .. "by " .. steamid .. "!"
-				PUG:Notify( msg, 0, 4, "supers" )
-				PUG:saveConfig()
-			end)
+
+			local msg = "PUG Settings Updated "
+			msg = msg .. "by " .. steamid .. "!"
+
+			PUG:Notify( msg, 0, 4, "supers" )
+			PUG:saveConfig( data )
 		end
 	end
 end)
