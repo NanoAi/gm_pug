@@ -43,8 +43,10 @@ function clean.unfrozen()
 		local valid, phys = isValidPhys( ent )
 		if valid and ent.PUGBadEnt then
 			phys:EnableMotion( false )
-			ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
-			ent:CollisionRulesChanged()
+			if phys:IsPenetrating() and not hasConstraints( ent ) then
+				ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
+				ent:CollisionRulesChanged()
+			end
 			if ent.PUGGhosted then
 				ent:Remove()
 			end

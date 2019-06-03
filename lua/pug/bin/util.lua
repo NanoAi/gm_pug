@@ -81,6 +81,20 @@ function util.entityIsMoving( ent, speed )
 	end
 end
 
+function util.physIsMoving( phys, speed )
+	if type( phys ) ~= "PhysObj" then return end
+	if not IsValid( phys ) then return end
+
+	local zero = Vector(0,0,0)
+
+	if IsValid(phys) then
+		local vel = phys:GetVelocity():Distance(zero)
+		return ( vel > speed ), vel
+	else
+		return false, nil
+	end
+end
+
 function util.sleepEntity( ent, dontSleep )
 	if type( ent ) ~= "Entity" then return end
 	if not IsValid( ent ) then return end
@@ -106,27 +120,6 @@ function util.freezeEntity( ent )
 	if IsValid(phys) then
 		phys:EnableMotion( false )
 	end
-end
-
-function util.checkEntity( ent )
-	if type( ent ) ~= "Entity" then return end
-	if not IsValid( ent ) then return end
-
-	local group = ent:GetCollisionGroup()
-
-	if not ent:IsSolid() then
-		return false
-	end
-
-	if group == COLLISION_GROUP_DEBRIS_TRIGGER then
-		return false
-	end
-
-	if group == COLLISION_GROUP_WORLD then
-		return false
-	end
-
-	return util.entityIsMoving( ent, 0 )
 end
 
 function util.isEntityHeld( ent )

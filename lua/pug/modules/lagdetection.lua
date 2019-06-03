@@ -110,14 +110,19 @@ u.addHook("Tick", "LagDetection", function()
 	if ( lag.delta > lag.threshold ) and ( lag.timeout < sysTime ) then
 		skips = skips + 1
 
-		print( "LAG: ", lag.delta, "Th: ", lag.threshold )
-		print( "Average: ", sample.mean, "Skips: ", skips, "/", lag.skips )
-
 		if ( lag.delta > lag.trigger ) or ( skips > lag.skips ) then
+			ServerLog( "LAG: ", lag.delta, "Th: ", lag.threshold )
+			ServerLog( "Average: ", sample.mean, "Skips: ",
+			skips, "/", lag.skips )
+
 			lag.fClean()
 			lag.timeout = sysTime + lag.cooldown
+
+			PUG:Notify( "pug_lagdetected", 3, 5, nil )
+
 			if ( lag.delta > lag.panic ) or ( skips > lag.pSkips )  then
 				lag.fPanic()
+				PUG:Notify( "pug_lagpanic", 3, 5, nil )
 			end
 		end
 	end

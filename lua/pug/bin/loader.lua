@@ -54,11 +54,11 @@ function PUG:unLoad( moduleName )
 	end
 end
 
-local function writeData()
+local function writeData( modules )
 	local data = {}
 	local json = ""
 
-	for k, v in next, PUG.modules do
+	for k, v in next, modules do
 		data[ k ] = {
 			enabled = v.enabled,
 			data = { settings = v.data.settings },
@@ -73,7 +73,7 @@ function PUG:saveConfig( data )
 	local readFile = file.Read( "pug_settings.txt", "DATA" )
 
 	if ( not readFile ) or ( readFile == "" ) then
-		writeData()
+		writeData( self.modules )
 	else
 		if type( data ) == "string" then
 			data = util.JSONToTable( data )
@@ -120,7 +120,7 @@ function PUG:saveConfig( data )
 		end
 
 		timer.Simple(0, function()
-			writeData()
+			writeData( self.modules )
 		end)
 	end
 end
