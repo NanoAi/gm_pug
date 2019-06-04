@@ -1,8 +1,16 @@
 local PUG = PUG
 local timer = timer
 
-local addHook = PUG.util.addHook
+local u = PUG.util
 local hooks = {}
+
+local settings = {
+	["AllowGravityGun"] = false,
+}
+
+settings = u.getSettings( settings )
+
+local allowGravGun = settings[ "AllowGravityGun" ]
 
 local function applyPlayerHack( ply )
 	timer.Simple(0, function()
@@ -15,8 +23,8 @@ local function applyPlayerHack( ply )
 end
 
 --FIXME: Check if "PlayerInitialSpawn" is also needed.
-addHook("PlayerInitialSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
-addHook("PlayerSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
+u.addHook("PlayerInitialSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
+u.addHook("PlayerSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
 
 for _, ply in next, player.GetAll() do
 	if IsValid( ply ) then
@@ -24,18 +32,28 @@ for _, ply in next, player.GetAll() do
 	end
 end
 
-addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
+u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 	if type(target) ~= "Player" then
 		return
 	end
 
 	local ent = dmg:GetInflictor()
+	local valid = IsValid( ent )
 	local damageType = dmg:GetDamageType()
+
+	if allowGravGun and valid then
+		local phys = ent:GetPhysicsObject()
+		if IsValid( phys ) then
+			if phys:HasGameFlag( FVPHYSICS_WAS_THROWN ) then
+				return
+			end
+		end
+	end
 
 	if ent.PUGBadEnt then
 		return true
 	else
-		if IsValid( ent ) then
+		if valid then
 			if PUG:isGoodEnt( ent ) or ent:IsWeapon() then
 				return
 			end
@@ -48,5 +66,6 @@ addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 end, hooks)
 
 return {
-	hooks = hooks
+	hooks = hooks,
+	settings = settings,
 }
