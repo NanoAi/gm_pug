@@ -99,9 +99,16 @@ end, hooks)
 
 u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)
 	if not addFadingDoorHooks then return end
-	u.addJob(function()
-		local ent = tr.Entity
 
+	local ent = tr.Entity
+	local enum = COLLISION_GROUP_INTERACTIVE_DEBRIS
+
+	if IsValid( ent ) then
+		ent:SetCollisionGroup( enum )
+		ent._PUGForceCollision = enum
+	end
+
+	u.addJob(function()
 		if IsValid(ent) then
 			if not ent.isFadingDoor then return end
 			local state = ent.fadeActive
@@ -127,7 +134,7 @@ u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)
 				end
 
 				ent:oldFadeDeactivate()
-				ent:SetCollisionGroup(COLLISION_GROUP_INTERACTIVE)
+				ent:SetCollisionGroup( enum )
 			end
 
 			if state then

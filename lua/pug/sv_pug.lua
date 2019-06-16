@@ -115,6 +115,11 @@ do
 		local getHook = hook.Run( "PUG.SetCollisionGroup", self, group )
 		group = getHook or group
 
+		local isGroupNone = ( group == COLLISION_GROUP_NONE )
+		if self._PUGForceCollision and isGroupNone then
+			group = self._PUGForceCollision
+		end
+
 		if getHook ~= true then
 			PUG._SetCollisionGroup( self, group )
 		end

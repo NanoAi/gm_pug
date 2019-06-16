@@ -28,7 +28,7 @@ u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	local checkEnt = ( ent.PUGBadEnt and not PUG:isGoodEnt( ent ) )
 
 	if isGroupNone and checkEnt and ( not ent.PUGFrozen ) then
-		return COLLISION_GROUP_INTERACTIVE
+		return COLLISION_GROUP_INTERACTIVE_DEBRIS
 	end
 end, hooks)
 
@@ -39,7 +39,7 @@ u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
 
 	if bool and ent.PUGBadEnt and not ent.PUGGhosted then
 		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
-			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE )
+			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE_DEBRIS )
 		end
 	end
 end, hooks)
