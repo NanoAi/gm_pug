@@ -5,9 +5,12 @@ local settings = {
 	["AddFadingDoorHooks"] = true,
 	["BlockToolUseOnWorld"] = true,
 	["BlockToolSpam"] = true,
+	["BlockObjSpam"] = true,
 	["ToolFreezes"] = false,
 	["SpamToolDelay"] = 1,
 	["SpamToolRate"] = 7,
+	["SpamObjDelay"] = 1,
+	["SpamObjRate"] = 8,
 }
 
 settings = u.getSettings( settings )
@@ -15,60 +18,83 @@ settings = u.getSettings( settings )
 local addFadingDoorHooks 	= settings[ "AddFadingDoorHooks" ]
 local blockToolWorld 		= settings[ "BlockToolUseOnWorld" ]
 local blockToolSpam 		= settings[ "BlockToolSpam" ]
+local blockObjSpam 			= settings[ "BlockObjSpam" ]
 local toolFreezes 			= settings[ "ToolFreezes" ]
 local toolDelay 			= settings[ "SpamToolDelay" ]
 local toolRate 				= settings[ "SpamToolRate" ]
+local objDelay 				= settings[ "SpamObjDelay" ]
+local objRate 				= settings[ "SpamObjRate" ]
+
+local function usage( data, delay, rate )
+	local diff = 0
+
+	data.curTime = CurTime()
+	data.delay = data.delay or 0
+	data.useTimes = data.useTimes or 0
+
+	diff = data.curTime - data.delay
+
+	if data.useTimes <= 0 or diff > delay then
+		data.useTimes = 0
+		data.delay = 0
+		data.wasNotified = false
+	end
+
+	if diff > 0 then
+		data.useTimes = data.useTimes - 1
+		if data.useTimes < 0 then
+			data.useTimes = 0
+		end
+	else
+		data.useTimes = data.useTimes + 1
+
+		if data.useTimes > toolRate then
+			data.useTimes = toolRate
+		end
+
+		if data.useTimes >= toolRate then
+			data.delay = data.curTime + delay
+			return data, true
+		end
+	end
+
+	if data.delay == 0 then
+		data.delay = data.curTime + delay
+	end
+
+	return data, false
+end
 
 u.addHook("PUG.PostCanTool", "ToolSpamControl", function( ply, _, _, canTool )
 	if not canTool then return end
 	if not blockToolSpam then return end
 
 	ply.PUG_toolCTRL = ply.PUG_toolCTRL or {}
+	local data, shouldBlock = usage( ply.PUG_toolCTRL, toolDelay, toolRate )
 
-	local data = ply.PUG_toolCTRL
-	local delay = 0
-	local diff = 0
-
-	data.curTime = CurTime()
-	data.toolDelay = data.toolDelay or 0
-	data.toolUseTimes = data.toolUseTimes or 0
-
-	diff = data.curTime - data.toolDelay
-	delay = toolDelay
-
-	if data.toolUseTimes <= 0 or diff > delay then
-		data.toolUseTimes = 0
-		data.toolDelay = 0
-		data.wasNotified = false
-	end
-
-	if diff > 0 then
-		data.toolUseTimes = data.toolUseTimes - 1
-		if data.toolUseTimes < 0 then
-			data.toolUseTimes = 0
+	if shouldBlock then
+		if not data.wasNotified then
+			data.wasNotified = true
+			PUG:Notify( "pug_tool2fast", 1, 5, ply )
 		end
-	else
-		data.toolUseTimes = data.toolUseTimes + 1
-
-		if data.toolUseTimes > toolRate then
-			data.toolUseTimes = toolRate
-		end
-
-		if data.toolUseTimes >= toolRate then
-			data.toolDelay = data.curTime + delay
-			if not data.wasNotified then
-				data.wasNotified = true
-				PUG:Notify( "pug_tool2fast", 1, 5, ply )
-			end
-
-			return false
-		end
-	end
-
-	if data.toolDelay == 0 then
-		data.toolDelay = data.curTime + delay
+		return false
 	end
 end, hooks)
+
+u.addHook("PlayerSpawnObject", "ObjectSpamControl", function( ply )
+	if not blockObjSpam then return end
+
+	ply.PUG_objSpawnCTRL = ply.PUG_objSpawnCTRL or {}
+	local data, shouldBlock = usage( ply.PUG_objSpawnCTRL, objDelay, objRate )
+
+	if shouldBlock then
+		if not data.wasNotified then
+			data.wasNotified = true
+			PUG:Notify( "pug_spawn2fast", 1, 5, ply )
+		end
+		return false
+	end
+end)
 
 u.addHook("CanTool", "ToolWorldControl", function(ply, tr)
 	if blockToolWorld then
