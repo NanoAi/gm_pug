@@ -94,7 +94,7 @@ u.addHook("PlayerSpawnObject", "ObjectSpamControl", function( ply )
 		end
 		return false
 	end
-end)
+end, hooks)
 
 u.addHook("CanTool", "ToolWorldControl", function(ply, tr)
 	if blockToolWorld then
