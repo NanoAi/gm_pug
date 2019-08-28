@@ -9,7 +9,7 @@ end
 
 function util.safeSetCollisionGroup( ent, group, pObj )
 	if ent:IsPlayerHolding() then return end
-	if ent.APG_Ghosted then return end
+	if ent.PUGGhosted then return end
 	if pObj then pObj:Sleep() end
 	ent:SetCollisionGroup( group )
 	ent:CollisionRulesChanged()
