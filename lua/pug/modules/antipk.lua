@@ -5,14 +5,17 @@ local u = PUG.util
 local hooks = {}
 
 local settings = {
+	["ApplyPlayerHack"] = true,
 	["AllowGravityGun"] = false,
 }
 
 settings = u.getSettings( settings )
 
+local setPlayerHack = settings[ "ApplyPlayerHack" ]
 local allowGravGun = settings[ "AllowGravityGun" ]
 
 local function applyPlayerHack( ply )
+	if not setPlayerHack then return end
 	timer.Simple(0, function()
 		local phys = ply:GetPhysicsObject()
 		if IsValid(phys) then
