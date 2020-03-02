@@ -16,16 +16,16 @@ local noPhysgunReload 	= settings[ "NoPhysgunReload" ]
 local noVehiclePickup 	= settings[ "NoVehiclePickup" ]
 
 u.addHook("PhysgunDrop", "physgun", function( _, ent )
-	if noThrowing and ( IsValid( ent ) and ent.GetPhysicsObject ) then
+	if noThrowing then
 		u.sleepEntity( ent, true )
+	end
+	if alwaysFrozen then
+		u.freezeEntity( ent )
 	end
 end, hooks)
 
 u.addHook("CanPlayerUnfreeze", "physgun", function( _, _, phys )
 	if alwaysFrozen then
-		if IsValid( phys ) then
-			phys:EnableMotion( false )
-		end
 		return false
 	end
 end, hooks)

@@ -9,6 +9,7 @@ local settings = {
 	["GhostOnSpawn"] = true,
 	["GhostNoCollide"] = false,
 	["GroupOverride"] = true,
+	["TryUnGhostOnSpawn"] = true,
 }
 
 settings = u.getSettings( settings )
@@ -18,6 +19,7 @@ local ghostSetPos 		= settings[ "GhostOnSetPos" ]
 local ghostOnSpawn 		= settings[ "GhostOnSpawn" ]
 local ghostNoCollide 	= settings[ "GhostNoCollide" ]
 local groupOverride 	= settings[ "GroupOverride" ]
+local tryUnGhostOnSpawn = settings[ "TryUnGhostOnSpawn" ]
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not groupOverride then
@@ -258,6 +260,13 @@ u.addHook("OnEntityCreated", "Ghosting", function( ent )
 		u.sleepEntity( ent )
 
 		PUG:Ghost( ent )
+
+		if tryUnGhostOnSpawn then
+			timer.Simple(0.05, function()
+				if u.isEntityHeld(ent) then return end
+				PUG:UnGhost( ent )
+			end)
+		end
 	end)
 end, hooks)
 
