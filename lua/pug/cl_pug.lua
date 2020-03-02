@@ -10,103 +10,105 @@ local function showSettings( data, len )
 
 	if readFile and readFile ~= "" then
 		rData = util.JSONToTable( readFile )
-		if istable( rData ) then
-			for k, v in next, rData do
-				local node = dtree:AddNode( k )
 
-				node.key = k
-				node.value = v
+		-- If `rData` is not a table do not continue.
+		if not istable( rData ) then return end
 
-				function node:DoClick()
-					local enabled = rData[ self.key ].enabled
-					enabled = ( not enabled )
+		for k, v in next, rData do
+			local node = dtree:AddNode( k )
 
-					if enabled then
-						self.Icon:SetImage( "icon16/accept.png" )
-					else
-						self.Icon:SetImage( "icon16/delete.png" )
-					end
+			node.key = k
+			node.value = v
 
-					rData[ self.key ].enabled = enabled
-				end
+			function node:DoClick()
+				local enabled = rData[ self.key ].enabled
+				enabled = ( not enabled )
 
-				if v.enabled then
-					node.Icon:SetImage( "icon16/accept.png" )
+				if enabled then
+					self.Icon:SetImage( "icon16/accept.png" )
 				else
-					node.Icon:SetImage( "icon16/delete.png" )
+					self.Icon:SetImage( "icon16/delete.png" )
 				end
 
-				if v.data and istable( v.data.settings ) then
-					for kk, vv in next, v.data.settings do
-						local option = node:AddNode( kk )
-						option:DockPadding( 0, 0, 10, 0 )
+				rData[ self.key ].enabled = enabled
+			end
 
-						option.key = kk
-						option.value = vv
-						option.type = type( vv )
+			if v.enabled then
+				node.Icon:SetImage( "icon16/accept.png" )
+			else
+				node.Icon:SetImage( "icon16/delete.png" )
+			end
 
-						if option.type == "boolean" then
-							if option.value then
-								option.Icon:SetImage( "icon16/accept.png" )
-							else
-								option.Icon:SetImage( "icon16/delete.png" )
-							end
+			if v.data and istable( v.data.settings ) then
+				for kk, vv in next, v.data.settings do
+					local option = node:AddNode( kk )
+					option:DockPadding( 0, 0, 10, 0 )
+
+					option.key = kk
+					option.value = vv
+					option.type = type( vv )
+
+					if option.type == "boolean" then
+						if option.value then
+							option.Icon:SetImage( "icon16/accept.png" )
 						else
-							option.Icon:SetImage( "icon16/textfield_rename.png" )
+							option.Icon:SetImage( "icon16/delete.png" )
+						end
+					else
+						option.Icon:SetImage( "icon16/textfield_rename.png" )
 
-							if type( option.value ) == "table" then
-								option.value = table.concat( option.value, ", " )
-							end
-
-							local TextEntry = vgui.Create( "DTextEntry", option )
-							TextEntry:Dock( RIGHT )
-							TextEntry:SetText( tostring( option.value ) )
-							TextEntry:SetWide( 100 )
-
-							function TextEntry:OnChange()
-								option.Icon:SetImage( "icon16/textfield_rename.png" )
-							end
-
-							function TextEntry:OnEnter()
-								local entry = rData[ node.key ].data.settings
-								entry = entry[ option.key ]
-
-								if option.type == "table" then
-									local new = {}
-									self:GetValue():gsub('[0-9]+', function(n)
-										table.insert( new, tonumber( n ) )
-									end)
-									entry = new
-								end
-
-								if option.type == "number" then
-									self:GetValue():gsub('[0-9]+', function(n)
-										entry = tonumber( n )
-									end)
-								end
-
-								if option.type == "string" then
-									entry = self:GetValue()
-								end
-
-								option.Icon:SetImage( "icon16/disk.png" )
-								rData[ node.key ].data.settings[ option.key ] = entry
-							end
+						if type( option.value ) == "table" then
+							option.value = table.concat( option.value, ", " )
 						end
 
-						function option:DoClick()
-							if self.type == "boolean" then
-								local enabled = rData[ node.key ].data.settings
-								enabled = ( not enabled[ self.key ] )
+						local TextEntry = vgui.Create( "DTextEntry", option )
+						TextEntry:Dock( RIGHT )
+						TextEntry:SetText( tostring( option.value ) )
+						TextEntry:SetWide( 100 )
 
-								if enabled then
-									self.Icon:SetImage( "icon16/accept.png" )
-								else
-									self.Icon:SetImage( "icon16/delete.png" )
-								end
+						function TextEntry:OnChange()
+							option.Icon:SetImage( "icon16/textfield_rename.png" )
+						end
 
-								rData[ node.key ].data.settings[ self.key ] = enabled
+						function TextEntry:OnEnter()
+							local entry = rData[ node.key ].data.settings
+							entry = entry[ option.key ]
+
+							if option.type == "table" then
+								local new = {}
+								self:GetValue():gsub('[0-9]+', function(n)
+									table.insert( new, tonumber( n ) )
+								end)
+								entry = new
 							end
+
+							if option.type == "number" then
+								self:GetValue():gsub('[0-9]+', function(n)
+									entry = tonumber( n )
+								end)
+							end
+
+							if option.type == "string" then
+								entry = self:GetValue()
+							end
+
+							option.Icon:SetImage( "icon16/disk.png" )
+							rData[ node.key ].data.settings[ option.key ] = entry
+						end
+					end
+
+					function option:DoClick()
+						if self.type == "boolean" then
+							local enabled = rData[ node.key ].data.settings
+							enabled = ( not enabled[ self.key ] )
+
+							if enabled then
+								self.Icon:SetImage( "icon16/accept.png" )
+							else
+								self.Icon:SetImage( "icon16/delete.png" )
+							end
+
+							rData[ node.key ].data.settings[ self.key ] = enabled
 						end
 					end
 				end
@@ -143,19 +145,17 @@ local function init()
 	send:Dock( BOTTOM )
 
 	function send:DoClick()
-		if readFile then
-			if istable(rData) and next( rData ) then
-				sendData = util.TableToJSON( rData )
+		if readFile and ( istable(rData) and next( rData ) ) then
+			sendData = util.TableToJSON( rData )
 
-				if sendData and sendData ~= "" then
-					sendData = util.Compress( sendData )
+			if sendData and sendData ~= "" then
+				sendData = util.Compress( sendData )
 
-					net.Start("pug.take")
-					net.WriteData( sendData, #sendData )
-					net.SendToServer()
+				net.Start("pug.take")
+				net.WriteData( sendData, #sendData )
+				net.SendToServer()
 
-					sendData = ""
-				end
+				sendData = ""
 			end
 		end
 	end

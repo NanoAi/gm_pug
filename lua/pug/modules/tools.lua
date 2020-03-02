@@ -48,11 +48,8 @@ local function usage( data, delay, rate )
 	else
 		data.useTimes = data.useTimes + 1
 
-		if data.useTimes > toolRate then
-			data.useTimes = toolRate
-		end
-
 		if data.useTimes >= toolRate then
+			data.useTimes = toolRate
 			data.delay = data.curTime + delay
 			return data, true
 		end
@@ -97,11 +94,9 @@ u.addHook("PlayerSpawnObject", "ObjectSpamControl", function( ply )
 end, hooks)
 
 u.addHook("CanTool", "ToolWorldControl", function(ply, tr)
-	if blockToolWorld then
-		if tr.HitWorld then
-			PUG:Notify( "pug_toolworld", 1, 5, ply )
-			return false
-		end
+	if blockToolWorld and tr.HitWorld then
+		PUG:Notify( "pug_toolworld", 1, 5, ply )
+		return false
 	end
 end, hooks)
 

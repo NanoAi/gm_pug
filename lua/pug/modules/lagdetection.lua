@@ -48,7 +48,7 @@ local function getMean()
 		count = count + 1
 	end
 
-	sample.mean = ( total/count )
+	sample.mean = ( total / count )
 end
 
 local function addSample( delta )

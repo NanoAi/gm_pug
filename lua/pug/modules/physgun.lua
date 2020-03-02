@@ -16,10 +16,8 @@ local noPhysgunReload 	= settings[ "NoPhysgunReload" ]
 local noVehiclePickup 	= settings[ "NoVehiclePickup" ]
 
 u.addHook("PhysgunDrop", "physgun", function( _, ent )
-	if noThrowing then
-		if IsValid( ent ) and ent.GetPhysicsObject then
-			u.sleepEntity( ent, true )
-		end
+	if noThrowing and ( IsValid( ent ) and ent.GetPhysicsObject ) then
+		u.sleepEntity( ent, true )
 	end
 end, hooks)
 
@@ -33,10 +31,8 @@ u.addHook("CanPlayerUnfreeze", "physgun", function( _, _, phys )
 end, hooks)
 
 u.addHook("PhysgunPickup", "physgun", function( _, ent )
-	if noVehiclePickup then
-		if IsValid( ent ) and u.isVehicle( ent ) then
-			return false
-		end
+	if noVehiclePickup and ( IsValid( ent ) and u.isVehicle( ent ) ) then
+		return false
 	end
 end, hooks)
 

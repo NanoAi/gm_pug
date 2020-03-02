@@ -54,8 +54,8 @@ local function isTrap( ent )
 	for _,v in next, ents.FindInSphere( center, bRadius ) do
 		local isLivingPlayer = ( v:IsPlayer() and v:Alive() )
 
-		if isVehicle then
-			if isLivingPlayer then
+		if isLivingPlayer then
+			if isVehicle then
 				-- Check if the distance between the sphere centers is less
 				-- than the sum of their radius.
 				local vCenter = v:LocalToWorld( v:OBBCenter() )
@@ -63,9 +63,7 @@ local function isTrap( ent )
 					check = v
 					break
 				end
-			end
-		else
-			if isLivingPlayer then
+			else
 				local pos = v:GetPos()
 				local trace = { start = pos, endpos = pos, filter = v }
 				local tr = util.TraceEntity( trace, v )

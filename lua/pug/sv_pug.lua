@@ -179,10 +179,10 @@ do
 
 	function PhysObj:EnableMotion( bool )
 		local ent = self:GetEntity()
-		local hookRun = { hook.Run( "PUG.EnableMotion", ent, self, bool ) }
+		local canRun, override = hook.Run( "PUG.EnableMotion", ent, self, bool )
 
-		if hookRun[1] == true then return end
-		bool = hookRun[2] or bool
+		if canRun == true then return end
+		bool = override or bool
 		ent.PUGFrozen = (not bool)
 
 		return PUG._EnableMotion( self, bool )

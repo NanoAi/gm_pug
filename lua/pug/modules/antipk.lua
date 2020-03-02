@@ -46,20 +46,16 @@ u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 
 	if allowGravGun and valid then
 		local phys = ent:GetPhysicsObject()
-		if IsValid( phys ) then
-			if phys:HasGameFlag( FVPHYSICS_WAS_THROWN ) then
-				return
-			end
+		if IsValid( phys ) and phys:HasGameFlag( FVPHYSICS_WAS_THROWN ) then
+			return
 		end
 	end
 
 	if ent.PUGBadEnt then
 		return true
 	else
-		if valid then
-			if PUG:isGoodEnt( ent ) or ent:IsWeapon() then
-				return
-			end
+		if valid and ( PUG:isGoodEnt( ent ) or ent:IsWeapon() ) then
+			return
 		end
 	end
 
