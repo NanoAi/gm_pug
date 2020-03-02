@@ -234,7 +234,7 @@ end, hooks)
 u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 	timer.Simple(0.05, function()
 		u.addJob(function()
-			if u.isEntityHeld(ent) then return end
+			if u.isEntityHeld( ent ) then return end
 			if IsValid( ent ) then
 				PUG:UnGhost( ent )
 				if ent.PUGWeld then
@@ -246,11 +246,11 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 	end)
 end, hooks)
 
-u.addHook("OnEntityCreated", "Ghosting", function( ent )
+u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 	if not ghostOnSpawn then return end
 
-	timer.Simple(0.1, function()
-		if not ent.PUGBadEnt then return end
+	u.addJob(function()
+		if not isBadEnt then return end
 		if not IsValid( ent ) then return end
 		if not ent:IsSolid() then return end
 		if ent:GetClass() == "gmod_hands" then return end
@@ -263,11 +263,14 @@ u.addHook("OnEntityCreated", "Ghosting", function( ent )
 
 		if tryUnGhostOnSpawn then
 			timer.Simple(0.05, function()
-				if u.isEntityHeld(ent) then return end
-				PUG:UnGhost( ent )
+				if IsValid( ent ) and not u.isEntityHeld( ent ) then
+					PUG:UnGhost( ent )
+				end
 			end)
 		end
-	end)
+
+		return true
+	end, true, 3)
 end, hooks)
 
 u.addHook("CanProperty", "Ghosting", function( _, _, ent )

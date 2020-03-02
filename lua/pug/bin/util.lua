@@ -143,7 +143,13 @@ end
 
 function util.getSettings( defaults )
 	local module = PUG.currentModule or {}
-	-- local path = module.path
+
+	if PUG.configLoaded then
+		PUG.configLoaded = false
+		PUG:saveConfig()
+		print("-- [PUG] Settings Refreshed! --")
+		return
+	end
 
 	if not module.data then
 		module = defaults
@@ -183,24 +189,37 @@ end
 do
 	local jobs = {}
 
-	function util.addJob( callback )
-		assert(type(callback) == "function", "The callback must be a function!")
-		local index = #jobs + 1
-		jobs[ index ] = callback
+	local function jobProcess(index, job, try)
+		jobs[ index ].retry = try
+		jobs[ index ] = job
 	end
 
-	function util.removeJob( index )
-		jobs[ index ] = nil
+	function util.addJob( callback, runNextTick, retry )
+		assert(type(callback) == "function", "The callback must be a function!")
+		local index = #jobs + 1
+		jobs[ index ] = {
+			call = callback,
+			runNextTick = runNextTick or false,
+			retry = retry or 1,
+		}
 	end
 
 	hook.Add("Tick", "PUG_JobProcessor", function()
-		for _ = 1, 25 do
-			local index = #jobs
+		local index = #jobs
+		for i = 1, 25 do
 			local job = jobs[ index ]
-			if job then
-				job()
-				util.removeJob( index )
+			local try = job.retry - 1
+
+			if not job.runNextTick then
+				if job.call() or try <= 0 then
+					job = nil
+				end
+			else
+				job.runNextTick = false
 			end
+
+			jobProcess(index, job, try)
+			index = index - i
 		end
 	end)
 end

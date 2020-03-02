@@ -123,13 +123,15 @@ function PUG:saveConfig( data )
 			writeData( self.modules )
 		end)
 	end
+
+	PUG.configLoaded = true
 end
 
 PUG:saveConfig()
 include( "pug/bin/network.lua" )
 
 if not PUG.hasLoaded then
-	local loadTime = math.Round( ( SysTime() - PUG.InitAt ), 2 )
+	local loadTime = math.Round( ( SysTime() - PUG.InitAt ), 3 )
 	loadTime = loadTime == 0 and "2fast4u" or loadTime
 
 	print("PUG has hopped onto your server! Your physics are safe with PUG.")
@@ -138,5 +140,5 @@ if not PUG.hasLoaded then
 
 	PUG.hasLoaded = true
 else
-	print("-- [PUG] ReLoaded! --")
+	print("-- [PUG] Refreshed! --")
 end
