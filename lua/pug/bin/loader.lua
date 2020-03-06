@@ -123,8 +123,6 @@ function PUG:saveConfig( data )
 			writeData( self.modules )
 		end)
 	end
-
-	PUG.configLoaded = true
 end
 
 PUG:saveConfig()

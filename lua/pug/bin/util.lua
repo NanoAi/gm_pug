@@ -144,13 +144,6 @@ end
 function util.getSettings( defaults )
 	local module = PUG.currentModule or {}
 
-	if PUG.configLoaded then
-		PUG.configLoaded = false
-		PUG:saveConfig()
-		print("-- [PUG] Settings Refreshed! --")
-		return
-	end
-
 	if not module.data then
 		module = defaults
 	else
@@ -208,18 +201,20 @@ do
 		local index = #jobs
 		for i = 1, 25 do
 			local job = jobs[ index ]
-			local try = job.retry - 1
+			if job then
+				local try = job.retry - 1
 
-			if not job.runNextTick then
-				if job.call() or try <= 0 then
-					job = nil
+				if not job.runNextTick then
+					if job.call() or try <= 0 then
+						job = nil
+					end
+				else
+					job.runNextTick = false
 				end
-			else
-				job.runNextTick = false
-			end
 
-			jobProcess(index, job, try)
-			index = index - i
+				jobProcess(index, job, try)
+				index = index - i
+			end
 		end
 	end)
 end
