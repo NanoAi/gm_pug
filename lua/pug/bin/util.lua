@@ -179,6 +179,21 @@ function util.addTimer( timerID, delay, reps, callback, store )
 	return store
 end
 
+function util.tableReduce(func, tbl)
+	local out = 0
+	local head = tbl[1]
+	local err = "May contain only numbers."
+
+	assert( type(head) == "number", err )
+
+	for _, v in next, tbl do
+		assert( type(v) == "number", err )
+		out = func(out, v)
+	end
+
+	return out
+end
+
 do
 	local jobs = {}
 
