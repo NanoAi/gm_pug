@@ -80,29 +80,36 @@ u.addHook("Tick", "LagDetection", function()
 	lag.rate = 1 / ( sysTime - lag.lastTick )
 	lag.lastTick = sysTime
 
-	addSample( lag.rate )
+	local tol = sample.mean - lag.tolerance
+	local inTolerance = ( lag.rate > tol )
+	local inTimeout = ( lag.timeout > sysTime )
+	local isReady = ( sample.mean == 0 )
 
-	if sample.mean == 0 then
+	if not isReady then
+		addSample( lag.rate )
 		return
 	end
 
-	local tol = sample.mean + lag.tolerance
-	if ( lag.rate > tol ) and ( lag.timeout < sysTime ) then
-		skips = skips + 1
-		if ( lag.rate > lag.trigger ) or ( skips > lag.skips ) then
-			ServerLog( "LAG: ", lag.rate, "Th: ", lag.threshold )
-			ServerLog( "Average: ", sample.mean, "Skips: ",
-			skips, "/", lag.skips )
+	if isReady and ( not inTimeout ) then
+		if not inTolerance then
+			skips = skips + 1
+			if ( lag.rate > lag.trigger ) or ( skips > lag.skips ) then
+				ServerLog( "LAG: ", lag.rate, "Th: ", lag.threshold )
+				ServerLog( "Average: ", sample.mean, "Skips: ",
+				skips, "/", lag.skips )
 
-			lag.fClean()
-			lag.timeout = sysTime + lag.cooldown
+				lag.fClean()
+				lag.timeout = sysTime + lag.cooldown
 
-			PUG:Notify( "pug_lagdetected", 3, 5, nil )
+				PUG:Notify( "pug_lagdetected", 3, 5, nil )
 
-			if ( lag.rate > lag.panic ) or ( skips > lag.pSkips )  then
-				lag.fPanic()
-				PUG:Notify( "pug_lagpanic", 3, 5, nil )
+				if ( lag.rate > lag.panic ) or ( skips > lag.pSkips )  then
+					lag.fPanic()
+					PUG:Notify( "pug_lagpanic", 3, 5, nil )
+				end
 			end
+		else
+			addSample( lag.rate )
 		end
 	end
 end, hooks)
