@@ -52,13 +52,27 @@ assert( type( lag.fPanic ) == "function", "Invalid PanicMethod variable" )
 	Compare new rates against the average. (Test ZScore vs Subtraction.)
 ]]
 
+
 local function getMean()
+    --local count = 0
+    --for _, val in pairs(sample.data) do
+    --    count = count + val
+    --end
+	--return count / table.Count(sample.data)
+
 	local x = tableReduce( function(a, b) return a + b end, sample.data )
 	return ( x / #sample.data )
 end
 
+local maxRate = 1 / engine.TickInterval()
+local sampleTime = 1.5 -- time in seconds to average
+local sampleSize = sampleTime * maxRate
+
 local function addSample( rate )
-	sample.index = ( sample.index % 120 ) + 1
+    rate = math.Clamp( rate, 0, maxRate )
+
+	sample.index = math.ceil( sample.index % sampleSize ) + 1
+
 	sample.data[ sample.index ] = rate
 	if ( sample.index % 10 ) == 0 then
 		sample.mean = getMean()
@@ -77,7 +91,7 @@ u.addHook("Tick", "LagDetection", function()
 	if halt then return end
 
 	local sysTime = SysTime()
-	local isReady = ( sample.mean == 0 )
+	local isReady = ( sample.mean ~= 0 )
 
 	lag.rate = 1 / ( sysTime - lag.lastTick )
 	lag.lastTick = sysTime
@@ -95,24 +109,31 @@ u.addHook("Tick", "LagDetection", function()
 
 	if not inTolerance then
 		skips = skips + 1
-		if ( lag.rate > lag.trigger ) or ( skips > lag.skips ) then
-			ServerLog( "LAG: ", lag.rate, "Th: ", lag.threshold )
-			ServerLog( "Average: ", sample.mean, "Skips: ",
-			skips, "/", lag.skips )
+		print("Skips: " .. tostring(skips))
+		print("Rate: " .. tostring(lag.rate))
+		print("Average: " .. tostring(sample.mean))
+
+		-- IF there's casual lag
+		if ( sample.mean <= lag.trigger ) or ( skips >= lag.skips ) then
+			print( "LAG!", "Rate: ", lag.rate, "Trigger: ", lag.trigger )
+			print( "Average: ", sample.mean, "Skips: ", skips, "/", lag.skips ) 
 
 			lag.fClean()
 			lag.timeout = sysTime + lag.cooldown
 
 			PUG:Notify( "pug_lagdetected", 3, 5, nil )
 
-			if ( lag.rate > lag.panic ) or ( skips > lag.pSkips )  then
-				lag.fPanic()
-				PUG:Notify( "pug_lagpanic", 3, 5, nil )
-			end
+        end
+
+        -- If there's a panic
+        if ( sample.mean <= lag.panic ) or ( skips >= lag.pSkips )  then
+            lag.fPanic()
+            PUG:Notify( "pug_lagpanic", 3, 5, nil )
 		end
-	else
-		addSample( lag.rate )
-	end
+    end
+
+    addSample( lag.rate )
+
 end, hooks)
 
 return {
