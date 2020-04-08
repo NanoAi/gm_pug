@@ -54,12 +54,6 @@ assert( type( lag.fPanic ) == "function", "Invalid PanicMethod variable" )
 
 
 local function getMean()
-    --local count = 0
-    --for _, val in pairs(sample.data) do
-    --    count = count + val
-    --end
-	--return count / table.Count(sample.data)
-
 	local x = tableReduce( function(a, b) return a + b end, sample.data )
 	return ( x / #sample.data )
 end
@@ -109,9 +103,6 @@ u.addHook("Tick", "LagDetection", function()
 
 	if not inTolerance then
 		skips = skips + 1
-		print("Skips: " .. tostring(skips))
-		print("Rate: " .. tostring(lag.rate))
-		print("Average: " .. tostring(sample.mean))
 
 		-- IF there's casual lag
 		if ( sample.mean <= lag.trigger ) or ( skips >= lag.skips ) then
