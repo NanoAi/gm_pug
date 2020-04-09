@@ -98,7 +98,7 @@ u.addHook("Tick", "LagDetection", function()
 	end
 
 	local tol = sample.mean - getSettings.tolerance
-	local inTolerance = ( sample.tickRate > tol )
+	local inTolerance = ( sample.tickRate <= tol )
 	local inTimeout = ( sample.timeout > sysTime )
 
 	if inTimeout then return end
