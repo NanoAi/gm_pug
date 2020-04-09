@@ -5,12 +5,14 @@ local tableReduce = u.tableReduce
 local hooks = {}
 local timers = {}
 local settings = {
-	["skipCount"] = 8,
-	["skipCountPanic"] = 16,
-	["DetectionTolerance"] = 7,
-	["DetectionTrigger"] = 13,
-	["DetectionPanicTrigger"] = 42,
+	["SkipCount"] = 8,
+	["SkipCountPanic"] = 16,
+	["DetectionTolerance"] = 5,
+	["DetectionTrigger"] = 64,
+	["DetectionPanicTrigger"] = 59,
 	["DetectionCooldown"] = 2,
+	["SampleSize"] = 132,
+	["ServerTickRate"] = 66,
 	["CleanupMethod"] = "unfrozen",
 	["PanicMethod"] = "reset",
 }
@@ -24,27 +26,33 @@ local sample = {
 	data = {},
 	index = 0,
 	mean = 0,
+	ready = false,
+	timeout = 0,
+	tickRate = 0,
+	lastTick = 0,
 }
 
-local lag = {
-	skips = settings["skipCount"],
-	pSkips = settings["skipCountPanic"],
+local getSettings = {
+	skips = settings["SkipCount"],
+	pSkips = settings["SkipCountPanic"],
 	tolerance = settings["DetectionTolerance"],
 	trigger = settings["DetectionTrigger"],
 	panic = settings["DetectionPanicTrigger"],
 	cooldown = settings["DetectionCooldown"],
-	timeout = 0,
-	rate = 0,
-	lastTick = 0,
+	sampleSize = settings["SampleSize"],
+	definedTickRate = settings["ServerTickRate"] + 0.66,
+	--^ The value of `sv_tickrate` is usually rounded down, so we are adding
+	-- 0.66 to account for that as per the Garry's Mod wiki entry.
+	-- ref: https://wiki.facepunch.com/gmod/engine.TickInterval
 }
 
 local clean = include("pug/bin/cleanups.lua")
 
-lag.fClean = clean[ settings[ "CleanupMethod" ] ]
-lag.fPanic = clean[ settings[ "PanicMethod" ] ]
+getSettings.fClean = clean[ settings[ "CleanupMethod" ] ]
+getSettings.fPanic = clean[ settings[ "PanicMethod" ] ]
 
-assert( type( lag.fClean ) == "function", "Invalid CleanupMethod variable" )
-assert( type( lag.fPanic ) == "function", "Invalid PanicMethod variable" )
+assert( type( getSettings.fClean ) == "function", "Invalid CleanupMethod variable" )
+assert( type( getSettings.fPanic ) == "function", "Invalid PanicMethod variable" )
 
 --[[ TODO: Rebuild Lag Detection
 	Server FPS = 1/(SysTime - lastTick)
@@ -58,10 +66,14 @@ local function getMean()
 end
 
 local function addSample( rate )
-	sample.index = ( sample.index % 120 ) + 1
+	rate = math.min( rate, getSettings.definedTickRate )
+	--^ We only want to sample dips in the tick rate.
+	sample.index = ( sample.index % getSettings.sampleSize ) + 1
+
 	sample.data[ sample.index ] = rate
 	if ( sample.index % 10 ) == 0 then
 		sample.mean = getMean()
+		sample.ready = true
 	end
 end
 
@@ -77,42 +89,46 @@ u.addHook("Tick", "LagDetection", function()
 	if halt then return end
 
 	local sysTime = SysTime()
-	local isReady = ( sample.mean == 0 )
+	sample.tickRate = 1 / ( sysTime - sample.lastTick )
+	sample.lastTick = sysTime
 
-	lag.rate = 1 / ( sysTime - lag.lastTick )
-	lag.lastTick = sysTime
-
-	if not isReady then
-		addSample( lag.rate )
+	if not sample.ready then
+		addSample( sample.tickRate )
 		return
 	end
 
-	local tol = sample.mean - lag.tolerance
-	local inTolerance = ( lag.rate > tol )
-	local inTimeout = ( lag.timeout > sysTime )
+	local tol = sample.mean - getSettings.tolerance
+	local inTolerance = ( sample.tickRate > tol )
+	local inTimeout = ( sample.timeout > sysTime )
 
 	if inTimeout then return end
 
 	if not inTolerance then
 		skips = skips + 1
-		if ( lag.rate > lag.trigger ) or ( skips > lag.skips ) then
-			ServerLog( "LAG: ", lag.rate, "Th: ", lag.threshold )
-			ServerLog( "Average: ", sample.mean, "Skips: ",
-			skips, "/", lag.skips )
 
-			lag.fClean()
-			lag.timeout = sysTime + lag.cooldown
+		local skipsOverLimit = ( skips >= getSettings.skips )
+		local skipsOverPanic = ( skips >= getSettings.pSkips )
+		local rateOverLimit = ( sample.tickRate <= getSettings.trigger )
+		local rateOverPanic = ( sample.tickRate <= getSettings.panic )
+
+		if rateOverLimit or skipsOverLimit then
+			ServerLog( "LAG: ", sample.tickRate, "Th: ", getSettings.tolerance )
+			ServerLog( "Average: ", sample.mean, "Skips: ",
+			skips, "/", getSettings.skips )
+
+			getSettings.fClean()
+			sample.timeout = sysTime + getSettings.cooldown
 
 			PUG:Notify( "pug_lagdetected", 3, 5, nil )
 
-			if ( lag.rate > lag.panic ) or ( skips > lag.pSkips )  then
-				lag.fPanic()
+			if rateOverPanic or skipsOverPanic then
+				getSettings.fPanic()
 				PUG:Notify( "pug_lagpanic", 3, 5, nil )
 			end
 		end
-	else
-		addSample( lag.rate )
 	end
+
+	addSample( sample.tickRate )
 end, hooks)
 
 return {
