@@ -41,7 +41,7 @@ local getSettings = {
 	cooldown = settings["DetectionCooldown"],
 	sampleSize = settings["SampleSize"],
 	definedTickRate = settings["ServerTickRate"] + 0.66,
-	--^ The value of `sv_tickrate` is usually rounded down, so we are adding
+	--^ The value `tickrate` is usually rounded down, so we are adding
 	-- 0.66 to account for that as per the Garry's Mod wiki entry.
 	-- ref: https://wiki.facepunch.com/gmod/engine.TickInterval
 }
@@ -77,6 +77,11 @@ local function addSample( rate )
 	end
 end
 
+local function notifyAdminsAboutSettings()
+	PUG:Notify( "pug_lagsettings", 1, 5, "supers" )
+	notifyAdminsAboutSettings = nil
+end
+
 u.addTimer("LagDetection", 1, 0, function()
 	halt = false
 	skips = skips - 1
@@ -95,10 +100,18 @@ u.addHook("Tick", "LagDetection", function()
 	if not sample.ready then
 		addSample( sample.tickRate )
 		return
+	else
+		if notifyAdminsAboutSettings then
+			local comp = math.abs(getSettings.definedTickRate - sample.mean)
+			local outOfBounds = comp > 1
+			if outOfBounds then
+				notifyAdminsAboutSettings()
+			end
+		end
 	end
 
-	local tol = sample.mean - getSettings.tolerance
-	local inTolerance = ( sample.tickRate <= tol )
+	local tol = sample.mean + getSettings.tolerance
+	local inTolerance = ( sample.tickRate > tol )
 	local inTimeout = ( sample.timeout > sysTime )
 
 	if inTimeout then return end
@@ -112,8 +125,8 @@ u.addHook("Tick", "LagDetection", function()
 		local rateOverPanic = ( sample.tickRate <= getSettings.panic )
 
 		if rateOverLimit or skipsOverLimit then
-			ServerLog( "LAG: ", sample.tickRate, "Th: ", getSettings.tolerance )
-			ServerLog( "Average: ", sample.mean, "Skips: ",
+			print( "LAG: ", sample.tickRate, "Th: ", getSettings.tolerance )
+			print( "Average: ", sample.mean, "Skips: ",
 			skips, "/", getSettings.skips )
 
 			getSettings.fClean()
