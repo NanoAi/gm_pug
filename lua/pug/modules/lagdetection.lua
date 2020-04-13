@@ -48,17 +48,11 @@ local getSettings = {
 
 local clean = include("pug/bin/cleanups.lua")
 
-getSettings.fClean = clean[ settings[ "CleanupMethod" ] ]
-getSettings.fPanic = clean[ settings[ "PanicMethod" ] ]
+local cCleanupMethod = clean[ settings[ "CleanupMethod" ] ]
+local cPanicMethod = clean[ settings[ "PanicMethod" ] ]
 
-assert( type( getSettings.fClean ) == "function", "Invalid CleanupMethod variable" )
-assert( type( getSettings.fPanic ) == "function", "Invalid PanicMethod variable" )
-
---[[ TODO: Rebuild Lag Detection
-	Server FPS = 1/(SysTime - lastTick)
-	Sample the FPS and find the average rate.
-	Compare new rates against the average. (Test ZScore vs Subtraction.)
-]]
+assert( type( cCleanupMethod ) == "function", "Invalid CleanupMethod variable" )
+assert( type( cPanicMethod ) == "function", "Invalid PanicMethod variable" )
 
 local function getMean()
 	local x = tableReduce( function(a, b) return a + b end, sample.data )
@@ -80,6 +74,25 @@ end
 local function notifyAdminsAboutSettings()
 	PUG:Notify( "pug_lagsettings", 1, 5, "supers" )
 	notifyAdminsAboutSettings = nil
+end
+
+local function cleanup( panic )
+	local rate = sample.tickRate
+	local hook = hook.Run( "PUG.LagDetection.Cleanup", panic, rate )
+
+	if hook == true then return end
+
+	if panic then
+		cPanicMethod()
+		PUG:Notify( "pug_lagpanic", 3, 5, nil )
+	else
+		cCleanupMethod()
+		PUG:Notify( "pug_lagdetected", 3, 5, nil )
+	end
+
+	u.addJob(function()
+		hook.Run( "PUG.LagDetection.PostCleanup", panic, rate )
+	end, true)
 end
 
 u.addTimer("LagDetection", 1, 0, function()
@@ -129,14 +142,12 @@ u.addHook("Tick", "LagDetection", function()
 			print( "Average: ", sample.mean, "Skips: ",
 			skips, "/", getSettings.skips )
 
-			getSettings.fClean()
 			sample.timeout = sysTime + getSettings.cooldown
 
-			PUG:Notify( "pug_lagdetected", 3, 5, nil )
-
 			if rateOverPanic or skipsOverPanic then
-				getSettings.fPanic()
-				PUG:Notify( "pug_lagpanic", 3, 5, nil )
+				cleanup( true )
+			else
+				cleanup( false )
 			end
 		end
 	end

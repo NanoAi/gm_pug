@@ -1,4 +1,4 @@
-local physenv, table, ents = physenv, table, ents
+local hook, physenv, table, ents = hook, physenv, table, ents
 local hasConstraints = constraint.HasConstraints
 local u = PUG.util
 
@@ -121,7 +121,7 @@ end
 
 function clean.custom()
 	haltPhysEnv( function( done )
-		RunConsoleCommand("pug_cleanup")
+		hook.Run("PUG.Cleanup.CustomCall")
 		u.addJob( function()
 			done()
 		end )
