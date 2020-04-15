@@ -1,4 +1,5 @@
-AddCSLuaFile("pug/cl_pug.lua")
+AddCSLuaFile("pug/client/pug.lua")
+AddCSLuaFile("pug/client/language.lua")
 
 PUG = PUG or {}
 
