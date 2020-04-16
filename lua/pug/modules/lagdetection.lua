@@ -70,7 +70,7 @@ local function lagDetectionReady()
 			local msg = "PUG [AUTOSET]: definedTickRate = %i, " ..
 			"DetectionTrigger = %i"
 
-			msg = string.format( msg, sample.mean, getSettigns.trigger )
+			msg = string.format( msg, sample.mean, getSettings.trigger )
 			print( msg )
 		end
 		hook.Run( "PUG.LagDetection.Ready", getSettings, sample )
