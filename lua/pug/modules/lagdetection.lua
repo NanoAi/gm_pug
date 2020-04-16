@@ -2,13 +2,14 @@ local PUG = PUG
 local u = PUG.util
 local tableReduce = u.tableReduce
 
+local defaults = false
 local hooks = {}
 local timers = {}
 local settings = {
 	["SkipCount"] = 8,
 	["SkipCountPanic"] = 16,
 	["DetectionTolerance"] = 5,
-	["DetectionTrigger"] = 64,
+	["DetectionTrigger"] = 56,
 	["DetectionPanicTrigger"] = 59,
 	["DetectionCooldown"] = 2,
 	["SampleSize"] = 132,
@@ -17,7 +18,7 @@ local settings = {
 	["PanicMethod"] = "reset",
 }
 
-settings = u.getSettings( settings )
+settings, defaults = u.getSettings( settings )
 
 local halt = true
 local skips = 0
@@ -59,6 +60,23 @@ local function getMean()
 	return ( x / #sample.data )
 end
 
+local function lagDetectionReady()
+	if not sample.ready then
+		sample.ready = true
+		if defaults then
+			getSettings.definedTickRate = sample.mean
+			getSettings.trigger = sample.mean - 10
+
+			local msg = "PUG [AUTOSET]: definedTickRate = %i, " ..
+			"DetectionTrigger = %i"
+
+			msg = string.format( msg, sample.mean, getSettigns.trigger )
+			print( msg )
+		end
+		hook.Run( "PUG.LagDetection.Ready", getSettings, sample )
+	end
+end
+
 local function addSample( rate )
 	rate = math.min( rate, getSettings.definedTickRate )
 	--^ We only want to sample dips in the tick rate.
@@ -67,7 +85,7 @@ local function addSample( rate )
 	sample.data[ sample.index ] = rate
 	if ( sample.index % 10 ) == 0 then
 		sample.mean = getMean()
-		sample.ready = true
+		lagDetectionReady()
 	end
 end
 
@@ -78,9 +96,9 @@ end
 
 local function cleanup( panic )
 	local rate = sample.tickRate
-	local hook = hook.Run( "PUG.LagDetection.Cleanup", panic, rate )
+	local override = hook.Run( "PUG.LagDetection.Cleanup", panic, rate )
 
-	if hook == true then return end
+	if override == true then return end
 
 	if panic then
 		cPanicMethod()

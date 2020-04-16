@@ -150,7 +150,7 @@ function util.getSettings( defaults )
 		module = table.Merge( defaults, module.data.settings or {} )
 	end
 
-	return module
+	return module, module == defaults
 end
 
 function util.addHook( hookID, id, callback, store )
