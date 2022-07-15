@@ -202,7 +202,7 @@ function PUG:UnGhost( ent )
 		return true
 	else
 		if trap then
-			u.notifyOwner( "pug_istrap", NOTIFY_ERROR, 4, ent )
+			u.notifyOwner( "pug_istrap", 1, 4, ent )
 		end
 		return false
 	end

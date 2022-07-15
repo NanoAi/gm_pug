@@ -175,6 +175,8 @@ net.Receive("pug.send", function( len )
 	showSettings( net.ReadData( len ), len )
 end)
 
+language.Add("pug_istrap", "The entity cannot be unghosted because there is something inside it")
+language.Add("pug_doorghost", "Your fading door has been ghosted because something was obstructing it")
 language.Add("pug_ghost", "Ghosted entities have limited interactability")
 language.Add("pug_entfrozen", "Target entity frozen")
 language.Add("pug_tool2fast", "You are using your tool gun too fast, slow down!")
