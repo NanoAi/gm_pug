@@ -13,7 +13,7 @@ local maxCollisions = settings[ "MaxObjectCollisions" ]
 local velocityDamp = settings[ "VelocityDamping" ]
 local cooldown = settings[ "Cooldown" ]
 
-local function collCall(ent, data)
+u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 	local hit = data.HitObject
 	local hitEnt = data.HitEntity
 	local entPhys = data.PhysObject
@@ -28,9 +28,9 @@ local function collCall(ent, data)
 		if not entPhys:IsCollisionEnabled() then return end
 		if not entPhys:IsPenetrating() then return end
 
-		ent["frzr9k"] = ent["frzr9k"] or {}
+		ent["PUG_TrackPhysics"] = ent["PUG_TrackPhysics"] or {}
 
-		local obj = ent["frzr9k"]
+		local obj = ent["PUG_TrackPhysics"]
 		local speed = 0
 
 		obj.collisions = ( obj.collisions or 0 ) + 1
@@ -76,16 +76,7 @@ local function collCall(ent, data)
 			obj.collisionTime = ( CurTime() + cooldown )
 		end
 	end
-end
-
-u.addHook("OnEntityCreated", "hookPhysics", function( ent )
-	u.addJob(function()
-		if not ent.PUGBadEnt then return end
-		if not IsValid( ent ) then return end
-		if not ent:IsSolid() then return end
-		ent:AddCallback( "PhysicsCollide", collCall )
-	end)
-end, hooks)
+end)
 
 return {
 	hooks = hooks,

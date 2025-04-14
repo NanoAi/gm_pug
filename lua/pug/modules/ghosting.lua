@@ -10,6 +10,7 @@ local settings = {
 	["GhostNoCollide"] = false,
 	["GroupOverride"] = true,
 	["TryUnGhostOnSpawn"] = true,
+	["TryUnGhostTimer"] = 5,
 }
 
 settings = u.getSettings( settings )
@@ -20,6 +21,7 @@ local ghostOnSpawn 		= settings[ "GhostOnSpawn" ]
 local ghostNoCollide 	= settings[ "GhostNoCollide" ]
 local groupOverride 	= settings[ "GroupOverride" ]
 local tryUnGhostOnSpawn = settings[ "TryUnGhostOnSpawn" ]
+local tryUnGhostTimer = (settings[ "TryUnGhostTimer" ] or 0) / 100
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not groupOverride then
@@ -128,6 +130,7 @@ function PUG:Ghost( ent )
 			ent.PUGGhost.material = ent:GetMaterial()
 		end
 
+		---@diagnostic disable-next-line: deprecated
 		ent:SetColor( Color( unpack( ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 	end)
@@ -232,7 +235,7 @@ u.addHook("PUG.PostPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 end, hooks)
 
 u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
-	timer.Simple(0.05, function()
+	timer.Simple(tryUnGhostTimer, function()
 		u.addJob(function()
 			if u.isEntityHeld( ent ) then return end
 			if IsValid( ent ) then
@@ -262,7 +265,7 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 		PUG:Ghost( ent )
 
 		if tryUnGhostOnSpawn then
-			timer.Simple(0.05, function()
+			timer.Simple(tryUnGhostTimer, function()
 				if IsValid( ent ) and not u.isEntityHeld( ent ) then
 					PUG:UnGhost( ent )
 				end
