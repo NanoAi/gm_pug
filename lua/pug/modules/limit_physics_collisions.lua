@@ -76,7 +76,7 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 			obj.collisionTime = ( CurTime() + cooldown )
 		end
 	end
-end)
+end, hooks)
 
 return {
 	hooks = hooks,
