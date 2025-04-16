@@ -59,10 +59,14 @@ local function writeData( modules )
 	local json = ""
 
 	for k, v in next, modules do
-		data[ k ] = {
-			enabled = v.enabled,
-			data = { settings = v.data.settings },
-		}
+		if (v and v.data) then
+			data[ k ] = {
+				enabled = v.enabled,
+				data = { settings = v.data.settings },
+			}
+		else
+			print("[PUGLoader] Could not write data for module: \"" .. (k or "UNKNOWN") .. "\"" )
+		end
 	end
 
 	json = util.TableToJSON( data )

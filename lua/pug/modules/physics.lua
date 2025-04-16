@@ -7,18 +7,14 @@ local hooks = {}
 local settings = {
 	["ApplyPlayerHack"] = true,
 	["AllowGravityGun"] = false,
-	["HookEntityCollision"] = true,
 	["DamageControl"] = true,
-	["BreakPropSurf"] = false,
 }
 
 settings = u.getSettings( settings )
 
 local _s = {
 	allowGravGun = settings[ "AllowGravityGun" ],
-	breakPropSurf = settings[ "BreakPropSurf" ],
 	damageControl = settings[ "DamageControl" ],
-	hookEntityCollision = settings[ "HookEntityCollision" ],
 	setPlayerHack = settings[ "ApplyPlayerHack" ],
 }
 
@@ -71,49 +67,6 @@ u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 	if damageType == DMG_CRUSH or damageType == DMG_VEHICLE then
 		return true
 	end
-end, hooks)
-
-u.addHook("PUG.EntityPhysicsCollide", "PUG_AntiSurf", function(ent, data)
-	if not _s.breakPropSurf then return end
-
-	local target = data.HitEntity
-	if type(target) ~= "Player" then
-		return
-	end
-
-	local pos = {
-		target = target:GetPos(),
-		ent = ent:GetPos()
-	}
-
-	u.entityForceDrop(ent)
-	u.sleepEntity(ent, false)
-
-	u.addJob(function() 
-		if not IsValid(target) then return end
-
-		ent:SetPos(pos.ent)
-		target:SetPos(pos.target)
-
-		local phys = ply:GetPhysicsObject()
-		if not IsValid(phys) then return end
-		phys:SetVelocity(data.TheirOldVelocity)
-	end)
-end)
-
-local function physCollide(ent, data)
-	if not _s.hookEntityCollision then return end
-	hook.Run( "PUG.EntityPhysicsCollide", ent, data )
-end
-
-u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
-	if not _s.hookEntityCollision then return end
-	u.addJob(function()
-		if not ent.PUGBadEnt then return end
-		if not IsValid( ent ) then return end
-		if not ent:IsSolid() then return end
-		ent.PUG_CollisionCallbackHook = ent:AddCallback( "PhysicsCollide", physCollide )
-	end)
 end, hooks)
 
 return {

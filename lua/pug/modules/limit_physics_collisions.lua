@@ -78,6 +78,19 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 	end
 end, hooks)
 
+local function physCollide(ent, data)
+	hook.Run( "PUG.EntityPhysicsCollide", ent, data )
+end
+
+u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
+	u.addJob(function()
+		if not ent.PUGBadEnt then return end
+		if not IsValid( ent ) then return end
+		if not ent:IsSolid() then return end
+		ent.PUG_CollisionCallbackHook = ent:AddCallback( "PhysicsCollide", physCollide )
+	end)
+end, hooks)
+
 return {
 	hooks = hooks,
 	settings = settings,
