@@ -47,7 +47,7 @@ function clean.unfrozen()
 				ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 				ent:CollisionRulesChanged()
 			end
-			if ent.PUGGhosted then
+			if u.isGhosted(ent) then
 				ent:Remove()
 			end
 		end

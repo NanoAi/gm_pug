@@ -7,6 +7,13 @@ do
 	cppiOwner = ENT.CPPIGetOwner
 end
 
+function util.isGhosted( ent )
+	if not ent.PUGGhosted then return false end
+	if type(ent.PUGGhosted) ~= "number" then return false end
+	if ent.PUGGhosted == 0 then return false end
+	return true
+end
+
 function util.safeSetCollisionGroup( ent, group, pObj )
 	if ent:IsPlayerHolding() then return end
 	if ent.PUGGhosted then return end

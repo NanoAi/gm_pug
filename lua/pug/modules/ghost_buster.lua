@@ -18,7 +18,7 @@ u.addHook("Think", "GhostBuster", function()
 	if (not PUG.UnGhost) then return end
 	local iter = 0
 	for _, ent in ents.Iterator() do
-		if ( IsValid(ent) and ent.PUGGhosted and not u.isEntityHeld( ent ) ) then
+		if ( IsValid(ent) and ent.PUGGhosted == 2 and not u.isEntityHeld( ent ) ) then
 			iter = iter + 1
 			PUG:UnGhost(ent)
 			if (iter >= _s.ghostCount) then

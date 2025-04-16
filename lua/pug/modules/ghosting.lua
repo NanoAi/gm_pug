@@ -41,7 +41,7 @@ u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
 		return
 	end
 
-	if bool and ent.PUGBadEnt and not ent.PUGGhosted then
+	if bool and ent.PUGBadEnt and not u.isGhosted(ent) then
 		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
 			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE_DEBRIS )
 		end
@@ -84,7 +84,7 @@ local function isTrap( ent )
 end
 
 function PUG:Ghost( ent )
-	if ent.PUGGhosted then return end
+	if u.isGhosted(ent) then return end
 	if ent.jailWall then return end
 	if not ent.PUGBadEnt then return end
 	if not ent:IsSolid() then return end
@@ -105,7 +105,7 @@ function PUG:Ghost( ent )
 
 	ent.OldCollisionGroup = nil
 	ent.DPP_oldCollision = nil
-	ent.PUGGhosted = true
+	ent.PUGGhosted = 1
 
 	timer.Simple(0, function()
 		if not IsValid( ent ) then return end
@@ -133,6 +133,7 @@ function PUG:Ghost( ent )
 		---@diagnostic disable-next-line: deprecated
 		ent:SetColor( Color( unpack( ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
+		ent.PUGGhosted = 2
 	end)
 
 	ent.PUGGhost.render = ent:GetRenderMode()
@@ -168,7 +169,7 @@ function PUG:Ghost( ent )
 end
 
 function PUG:UnGhost( ent )
-	if not ent.PUGGhosted then return end
+	if not u.isGhosted(ent) then return end
 
 	local trap = isTrap(ent)
 	local moving = u.entityIsMoving(ent, 9.3)
@@ -277,7 +278,7 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 end, hooks)
 
 u.addHook("CanProperty", "Ghosting", function( _, _, ent )
-	if ent.PUGGhosted then
+	if u.isGhosted(ent) then
 		u.notifyOwner( "pug_ghost", 1, 4, ent )
 		return false
 	end
@@ -285,14 +286,14 @@ end, hooks)
 
 u.addHook("CanTool", "Ghosting", function(_, tr, tool)
 	local ent = tr.Entity
-	if ent.PUGGhosted and tool ~= "remover" then
+	if u.isGhosted(ent) and tool ~= "remover" then
 		u.notifyOwner( "pug_ghost", 1, 4, ent )
 		return false
 	end
 end, hooks)
 
 u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
-	if ent.PUGGhosted then
+	if u.isGhosted(ent) then
 		return true
 	end
 
