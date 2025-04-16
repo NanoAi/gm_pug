@@ -11,20 +11,24 @@ local settings = {
 	["GroupOverride"] = true,
 	["TryUnGhostOnSpawn"] = true,
 	["TryUnGhostTimer"] = 5,
+	["SleepOnUnGhost"] = true,
 }
 
 settings = u.getSettings( settings )
 
-local ghostColour 		= settings[ "GhostColour" ]
-local ghostSetPos 		= settings[ "GhostOnSetPos" ]
-local ghostOnSpawn 		= settings[ "GhostOnSpawn" ]
-local ghostNoCollide 	= settings[ "GhostNoCollide" ]
-local groupOverride 	= settings[ "GroupOverride" ]
-local tryUnGhostOnSpawn = settings[ "TryUnGhostOnSpawn" ]
-local tryUnGhostTimer = (settings[ "TryUnGhostTimer" ] or 0) / 100
+local _s = {
+	ghostColour = settings[ "GhostColour" ],
+	ghostSetPos = settings[ "GhostOnSetPos" ],
+	ghostOnSpawn = settings[ "GhostOnSpawn" ],
+	ghostNoCollide = settings[ "GhostNoCollide" ],
+	groupOverride = settings[ "GroupOverride" ],
+	tryUnGhostOnSpawn = settings[ "TryUnGhostOnSpawn" ],
+	tryUnGhostTimer = (settings[ "TryUnGhostTimer" ] or 0) / 100,
+	sleepOnUnGhost = settings["SleepOnUnGhost"],
+}
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
-	if not groupOverride then
+	if not _s.groupOverride then
 		return
 	end
 
@@ -37,7 +41,7 @@ u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 end, hooks)
 
 u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
-	if not groupOverride then
+	if not _s.groupOverride then
 		return
 	end
 
@@ -131,7 +135,7 @@ function PUG:Ghost( ent )
 		end
 
 		---@diagnostic disable-next-line: deprecated
-		ent:SetColor( Color( unpack( ghostColour ) ) )
+		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 		ent.PUGGhosted = 2
 	end)
@@ -140,7 +144,7 @@ function PUG:Ghost( ent )
 	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
 	ent:DrawShadow( false )
 
-	if ghostNoCollide then
+	if _s.ghostNoCollide then
 		ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 	else
 		if ent.PUGGhost.collision ~= COLLISION_GROUP_WORLD then
@@ -176,7 +180,10 @@ function PUG:UnGhost( ent )
 
 	if not ( trap or moving ) then
 		u.entityForceDrop( ent )
-		u.sleepEntity( ent )
+
+		if _s.sleepOnUnGhost then
+			u.sleepEntity( ent )
+		end
 		ent:DrawShadow( true )
 
 		ent:SetRenderMode( ent.PUGGhost.render or RENDERMODE_NORMAL )
@@ -213,7 +220,7 @@ function PUG:UnGhost( ent )
 end
 
 u.addHook("PUG.PostSetPos", "Ghosting", function( ent )
-	if not ghostSetPos then return end
+	if not _s.ghostSetPos then return end
 	u.addJob(function()
 		if IsValid( ent ) and ent.PUGBadEnt then
 			PUG:Ghost( ent )
@@ -236,7 +243,7 @@ u.addHook("PUG.PostPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 end, hooks)
 
 u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
-	timer.Simple(tryUnGhostTimer, function()
+	timer.Simple(_s.tryUnGhostTimer, function()
 		u.addJob(function()
 			if u.isEntityHeld( ent ) then return end
 			if IsValid( ent ) then
@@ -251,7 +258,7 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 end, hooks)
 
 u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
-	if not ghostOnSpawn then return end
+	if not _s.ghostOnSpawn then return end
 
 	u.addJob(function()
 		if not isBadEnt then return end
@@ -265,8 +272,8 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 
 		PUG:Ghost( ent )
 
-		if tryUnGhostOnSpawn then
-			timer.Simple(tryUnGhostTimer, function()
+		if _s.tryUnGhostOnSpawn then
+			timer.Simple(_s.tryUnGhostTimer, function()
 				if IsValid( ent ) and not u.isEntityHeld( ent ) then
 					PUG:UnGhost( ent )
 				end

@@ -69,7 +69,9 @@ function util.entityForceDrop( ent )
 			end
 		end
 	end
-	DropEntityIfHeld( ent )
+	if DropEntityIfHeld then
+		DropEntityIfHeld( ent )
+	end
 	ent:ForcePlayerDrop()
 end
 
@@ -129,11 +131,17 @@ function util.freezeEntity( ent )
 	end
 end
 
-function util.isEntityHeld( ent )
+function util.isEntityPicked(ent)
 	if not istable(ent.PUGHolding) then
 		return false
 	end
 	return ( next( ent.PUGHolding ) ~= nil )
+end
+
+function util.isEntityHeld( ent )
+	if ent.PUGPicked then return true end
+	if ent:IsPlayerHolding() then return true end
+	return util.isEntityPicked(ent)
 end
 
 function util.addEntityHolder( ent, ply )

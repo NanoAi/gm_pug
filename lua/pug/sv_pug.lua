@@ -218,8 +218,10 @@ hook.Add("PUG_PostPhysgunPickup", "main", function( ply, ent, canPickup )
 end)
 
 hook.Add("PhysgunDrop", "PUG.PhysgunDrop", function( ply, ent )
-	ent.PUGPicked = false
 	u.removeEntityHolder( ent, ply )
+	if (not u.isEntityPicked(ent)) then
+		ent.PUGPicked = false
+	end
 end)
 
 -- NOTE: Now that the base is setup, load the modules!
