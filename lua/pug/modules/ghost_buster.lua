@@ -4,7 +4,7 @@ local ents = ents
 local hooks = {}
 local settings = {
 	["Ghosting_Must_Be_Enabled"] = true,
-  ["GhostsPerIteration"] = 1,
+	["GhostsPerIteration"] = 1,
 }
 
 settings = u.getSettings( settings )
@@ -15,21 +15,21 @@ local _s = {
 }
 
 u.addHook("Think", "GhostBuster", function()
-  if (not PUG.UnGhost) then return end
-  local iter = 0
-  for _, ent in ents.Iterator() do
-    if ( IsValid(ent) and ent.PUGGhosted ) then
-      iter = iter + 1
-      PUG:UnGhost(ent)
-      if ent.PUGWeld then
-        ent.PUGWeld:Remove()
-        ent.PUGWeld = nil
-      end
-      if (iter >= _s.ghostCount) then
-        break
-      end
-    end
-  end
+	if (not PUG.UnGhost) then return end
+	local iter = 0
+	for _, ent in ents.Iterator() do
+		if ( IsValid(ent) and ent.PUGGhosted ) then
+			iter = iter + 1
+			PUG:UnGhost(ent)
+			if ent.PUGWeld then
+				ent.PUGWeld:Remove()
+				ent.PUGWeld = nil
+			end
+			if (iter >= _s.ghostCount) then
+				break
+			end
+		end
+	end
 end, hooks)
 
 return {
