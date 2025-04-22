@@ -245,13 +245,12 @@ end, hooks)
 u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 	timer.Simple(_s.tryUnGhostTimer, function()
 		u.addJob(function()
+			if not IsValid(ent) then return end
 			if u.isEntityHeld( ent ) then return end
-			if IsValid( ent ) then
-				PUG:UnGhost( ent )
-				if ent.PUGWeld then
-					ent.PUGWeld:Remove()
-					ent.PUGWeld = nil
-				end
+			PUG:UnGhost( ent )
+			if ent.PUGWeld then
+				ent.PUGWeld:Remove()
+				ent.PUGWeld = nil
 			end
 		end)
 	end)
