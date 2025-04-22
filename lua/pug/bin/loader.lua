@@ -1,5 +1,6 @@
 PUG.modules = PUG.modules or {}
 
+local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local file, hook, timer = file, hook, timer
 local path = "pug/modules/"
 local modules = file.Find( path .. "*.lua", "LUA" )
@@ -50,7 +51,7 @@ function PUG:unLoad( moduleName )
 	else
 		local emsg = "The module " .. moduleName .. " doesn't exist or is "
 		emsg = emsg .. "invalid."
-		ErrorNoHalt( emsg )
+		ErrorNoHaltWithStack( emsg )
 	end
 end
 
@@ -89,7 +90,7 @@ function PUG:saveConfig( data )
 			local emsg = "Your custom settings have not been loaded "
 			emsg = emsg .. "because you have a misconfigured settings file! "
 			emsg = emsg .. "The default settings were used instead!"
-			ErrorNoHalt( emsg )
+			ErrorNoHaltWithStack( emsg )
 			return
 		end
 

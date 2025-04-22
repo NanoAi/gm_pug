@@ -20,6 +20,7 @@ local settings = {
 
 settings, defaults = u.getSettings( settings )
 
+local hasNotified = false
 local halt = true
 local skips = 0
 
@@ -62,7 +63,6 @@ end
 
 local function lagDetectionReady()
 	if not sample.ready then
-		sample.ready = true
 		if defaults then
 			getSettings.definedTickRate = sample.mean
 			getSettings.trigger = sample.mean - 10
@@ -90,8 +90,9 @@ local function addSample( rate )
 end
 
 local function notifyAdminsAboutSettings()
+	if hasNotified then return end
 	PUG:Notify( "pug_lagsettings", 1, 5, "supers" )
-	notifyAdminsAboutSettings = nil
+	hasNotified = true
 end
 
 local function cleanup( panic )
@@ -121,7 +122,11 @@ u.addTimer("LagDetection", 1, 0, function()
 	end
 end, timers)
 
-u.addHook("Tick", "LagDetection", function()
+u.addTimer("LD_Sampler", 185, 0, function()
+	sample.ready = true
+end, timers)
+
+u.addHook("Think", "LagDetection", function()
 	if halt then return end
 
 	local sysTime = SysTime()
@@ -142,7 +147,7 @@ u.addHook("Tick", "LagDetection", function()
 	end
 
 	local tol = sample.mean + getSettings.tolerance
-	local inTolerance = ( sample.tickRate > tol )
+	local inTolerance = ( sample.tickRate >= tol )
 	local inTimeout = ( sample.timeout > sysTime )
 
 	if inTimeout then return end

@@ -1,3 +1,4 @@
+local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local hook, timer = hook, timer
 PUG.util = include("pug/bin/util.lua")
 local u = PUG.util
@@ -148,7 +149,7 @@ do
 		if not IsColor(color) then
 			local emsg = "Invalid color passed to SetColor! This error "
 			emsg = emsg .. "prevents stuff from turning purple/pink."
-			ErrorNoHalt( emsg )
+			ErrorNoHaltWithStack( emsg )
 		else
 			PUG._SetColor( self, color )
 		end

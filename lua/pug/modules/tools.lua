@@ -104,7 +104,7 @@ u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool
 	if not canTool then return end
 	if not toolFreezes then return end
 
-	timer.Simple(0.003, function()
+	u.addJob(function()
 		local ent = tr.Entity
 		local phys = NULL
 
@@ -115,7 +115,7 @@ u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool
 				PUG:Notify( "pug_entfrozen", 1, 1, ply )
 			end
 		end
-	end)
+	end, true, 1)
 end, hooks)
 
 u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)

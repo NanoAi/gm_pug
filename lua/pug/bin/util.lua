@@ -1,4 +1,5 @@
-local istable, hook = istable, hook
+local hook = hook
+local istable = istable
 local cppiOwner = false
 local util = {}
 
@@ -20,6 +21,20 @@ function util.safeSetCollisionGroup( ent, group, pObj )
 	if pObj then pObj:Sleep() end
 	ent:SetCollisionGroup( group )
 	ent:CollisionRulesChanged()
+end
+
+function util.isValidPhys( ent )
+	if not IsValid( ent ) then return false end
+	local model = ent.GetModel and ent:GetModel() or nil
+
+	if not model then return false end
+	if not util.IsValidModel( model ) then return false end
+
+	local phys = ent.GetPhysicsObject and ent:GetPhysicsObject() or nil
+	if not phys then return false end
+	if not IsValid( phys ) then return false end
+
+	return true, phys, model
 end
 
 function util.isVehicle( ent, basic )
@@ -178,7 +193,16 @@ function util.addHook( hookID, id, callback, store )
 	store[ index ] = store[ index ] or {}
 	store[ index ][ hookID ] = id
 
-	return store
+	return store, index
+end
+
+function util.remHook( hookID, id, index, store )
+	assert( istable( store ) == true, "A storage table must be passed!" )
+	id = "PUG." .. id
+
+	hook.Remove( hookID, id )
+	store[ index ] = store[ index ] or {}
+	store[ index ][ hookID ] = nil
 end
 
 function util.addTimer( timerID, delay, reps, callback, store )
@@ -227,7 +251,7 @@ do
 		}
 	end
 
-	hook.Add("Tick", "PUG_JobProcessor", function()
+	hook.Add("Think", "PUG_JobProcessor", function()
 		local index = #jobs
 		for i = 1, 25 do
 			local job = jobs[ index ]

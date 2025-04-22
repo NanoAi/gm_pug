@@ -5,42 +5,20 @@ local u = PUG.util
 local clean = {}
 
 local function haltPhysEnv( callback )
-	local dataA = table.Copy( physenv.GetPerformanceSettings() )
-	local dataB = table.Copy( dataA )
+	physenv.SetPhysicsPaused( true )
+	print("-- PHYS ENV PAUSED --")
 
-	dataA.MaxVelocity = 0
-	dataA.MaxAngularVelocity = 0
-	dataA.LookAheadTimeObjectsVsObject = 0
-
-	physenv.SetPerformanceSettings( dataA )
-	print("-- ENV SET --")
-
-	callback( function()
-		timer.Simple(0, function()
-			physenv.SetPerformanceSettings( dataB )
-			print("-- ENV RESET --")
-		end)
-	end )
-end
-
-local function isValidPhys( ent )
-	if not IsValid( ent ) then return false end
-	local model = ent.GetModel and ent:GetModel() or nil
-
-	if not model then return false end
-	if not util.IsValidModel( model ) then return false end
-
-	local phys = ent.GetPhysicsObject and ent:GetPhysicsObject() or nil
-
-	if not phys then return false end
-	if not IsValid( phys ) then return false end
-
-	return true, phys, model
+	callback(function()
+		u.addJob(function() 
+			physenv.SetPhysicsPaused( false )
+			print("-- PHYS ENV RESUMED --")
+		end, true, 1)
+	end)
 end
 
 function clean.unfrozen()
 	for _, ent in next, ents.GetAll() do
-		local valid, phys = isValidPhys( ent )
+		local valid, phys = u.isValidPhys( ent )
 		if valid and ent.PUGBadEnt then
 			phys:EnableMotion( false )
 			if phys:IsPenetrating() and not hasConstraints( ent ) then
@@ -56,7 +34,7 @@ end
 
 function clean.nonContraptions()
 	for _, ent in next, ents.GetAll() do
-		local valid, phys = isValidPhys( ent )
+		local valid, phys = u.isValidPhys( ent )
 		if valid and ent.PUGBadEnt then
 			if phys:IsMotionEnabled() and not hasConstraints( ent ) then
 				ent:Remove()
@@ -71,7 +49,7 @@ function clean.clusters()
 		clean.unfrozen()
 
 		for _, v in next, ents.GetAll() do
-			local valid, phys = isValidPhys( v )
+			local valid, phys = u.isValidPhys( v )
 			if valid and phys then
 				if phys:IsMotionEnabled() then
 					if v.isFadingDoor and ent.PUGBadEnt then

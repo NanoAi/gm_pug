@@ -7,26 +7,31 @@ local hooks = {}
 local settings = {
 	["ApplyPlayerHack"] = true,
 	["AllowGravityGun"] = false,
+	["SleepOnDamage"] = false,
+	["TurboPhysics"] = false,
 	["DamageControl"] = true,
 }
 
 settings = u.getSettings( settings )
 
+local memory = {}
 local _s = {
 	allowGravGun = settings[ "AllowGravityGun" ],
 	damageControl = settings[ "DamageControl" ],
+	sleepOnDamage = settings[ "SleepOnDamage" ],
 	setPlayerHack = settings[ "ApplyPlayerHack" ],
+	turboPhysics = settings[ "TurboPhysics" ],
 }
 
 local function applyPlayerHack( ply )
 	if not _s.setPlayerHack then return end
-	timer.Simple(0, function()
+	u.addJob(function()
 		local phys = ply:GetPhysicsObject()
 		if IsValid(phys) then
 			phys:EnableMotion(false)
 			phys:Sleep()
 		end
-	end)
+	end, true, 1)
 end
 
 --FIXME: Check if "PlayerInitialSpawn" is also needed.
@@ -37,6 +42,29 @@ for _, ply in next, player.GetAll() do
 	if IsValid( ply ) then
 		applyPlayerHack( ply )
 	end
+end
+
+if _s.turboPhysics then
+	memory = physenv.GetPerformanceSettings()
+	RunConsoleCommand("sv_turbophysics", "1")
+	u.addJob(function()
+		local pe = physenv.GetPerformanceSettings()
+		pe.LookAheadTimeObjectsVsObject = 0.25
+		pe.MaxCollisionChecksPerTimestep = 25000
+		pe.MaxVelocity = 2000
+		pe.MaxAngularVelocity = 4000
+		pe.MaxFrictionMass = 1250
+		physenv.SetPerformanceSettings(pe)
+		print("[PUG][EXPERIMENTAL] !! Physics Getting Lazy... !!")
+	end, true, 1)
+else
+	RunConsoleCommand("sv_turbophysics", "0")
+	u.addJob(function()
+		if (memory and memory.LookAheadTimeObjectsVsObject) then
+			physenv.SetPerformanceSettings(memory)
+			print("[PUG][EXPERIMENTAL] !! Restored Physics Settings. !!")
+		end
+	end, true, 1)
 end
 
 u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
@@ -57,6 +85,9 @@ u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 	end
 
 	if ent.PUGBadEnt then
+		if _s.sleepOnDamage then
+			u.sleepEntity(ent)
+		end
 		return true
 	else
 		if valid and ( PUG:isGoodEnt( ent ) or ent:IsWeapon() ) then

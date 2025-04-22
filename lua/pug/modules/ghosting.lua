@@ -111,7 +111,7 @@ function PUG:Ghost( ent )
 	ent.DPP_oldCollision = nil
 	ent.PUGGhosted = 1
 
-	timer.Simple(0, function()
+	u.addJob(function()
 		if not IsValid( ent ) then return end
 
 		if not ent.PUGGhost.colour then
@@ -138,7 +138,7 @@ function PUG:Ghost( ent )
 		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 		ent.PUGGhosted = 2
-	end)
+	end, true, 1)
 
 	ent.PUGGhost.render = ent:GetRenderMode()
 	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
@@ -160,12 +160,12 @@ function PUG:Ghost( ent )
 			phys:EnableCollisions( false )
 			phys:EnableMotion( false )
 
-			timer.Simple(0, function()
+			u.addJob(function()
 				if IsValid(phys) then
 					phys:EnableCollisions( true )
 					phys:EnableMotion( hasMotion )
 				end
-			end)
+			end, true, 1)
 		end
 	end
 
@@ -263,7 +263,7 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 		if not isBadEnt then return end
 		if not IsValid( ent ) then return end
 		if not ent:IsSolid() then return end
-		if ent:GetClass() == "gmod_hands" then return end
+		if PUG:isGoodEnt(ent) then return end
 
 		DropEntityIfHeld( ent )
 		ent:ForcePlayerDrop()
