@@ -9,10 +9,8 @@ do
 end
 
 function util.isGhostState( ent, ghostState )
-	if not ghostState then ghostState = 2 end
 	if not ent.PUGGhosted then return false end
 	if type(ent.PUGGhosted) ~= "number" then return false end
-	if ent.PUGGhosted == 0 then return false end
 	return (ent.PUGGhosted == ghostState)
 end
 
