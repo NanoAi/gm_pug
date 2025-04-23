@@ -25,7 +25,7 @@ function clean.unfrozen()
 				ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 				ent:CollisionRulesChanged()
 			end
-			if u.isGhosted(ent) then
+			if u.isGhostState(ent, 1) then
 				ent:Remove()
 			end
 		end

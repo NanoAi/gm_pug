@@ -46,7 +46,7 @@ u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
 		return
 	end
 
-	if bool and ent.PUGBadEnt and not u.isGhosted(ent) then
+	if bool and ent.PUGBadEnt and not u.isGhostState(ent, 1) then
 		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
 			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE_DEBRIS )
 		end
@@ -89,7 +89,7 @@ local function isTrap( ent )
 end
 
 function PUG:Ghost( ent )
-	if u.isGhosted(ent) then return end
+	if u.isGhostState(ent, 1) then return end
 	if ent.jailWall then return end
 	if not ent.PUGBadEnt then return end
 	if not ent:IsSolid() then return end
@@ -112,7 +112,8 @@ function PUG:Ghost( ent )
 	ent.DPP_oldCollision = nil
 	ent.PUGGhosted = 1
 
-	u.addJob(function()
+	-- Setting this to a timer to avoid possible collisions.
+	timer.Simple(0, function()
 		if not IsValid( ent ) then return end
 		if not ent.PUGGhost then
 			local out = string.format("[PUG] PUGGhost was not initialized on Entity[%c][%s]", ent:EntIndex(), ent:GetClass())
@@ -144,7 +145,7 @@ function PUG:Ghost( ent )
 		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 		ent.PUGGhosted = 2
-	end, 2, 1)
+	end)
 
 	ent.PUGGhost.render = ent:GetRenderMode()
 	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
@@ -179,7 +180,7 @@ function PUG:Ghost( ent )
 end
 
 function PUG:UnGhost( ent )
-	if not u.isGhosted(ent) then return end
+	if not u.isGhostState(ent, 2) then return end
 
 	local trap = isTrap(ent)
 	local moving = u.entityIsMoving(ent, 9.3)
@@ -290,7 +291,7 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 end, hooks)
 
 u.addHook("CanProperty", "Ghosting", function( _, _, ent )
-	if u.isGhosted(ent) then
+	if u.isGhostState(ent, 1) then
 		u.notifyOwner( "pug_ghost", 1, 4, ent )
 		return false
 	end
@@ -298,14 +299,14 @@ end, hooks)
 
 u.addHook("CanTool", "Ghosting", function(_, tr, tool)
 	local ent = tr.Entity
-	if u.isGhosted(ent) and tool ~= "remover" then
+	if u.isGhostState(ent, 1) and tool ~= "remover" then
 		u.notifyOwner( "pug_ghost", 1, 4, ent )
 		return false
 	end
 end, hooks)
 
 u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
-	if u.isGhosted(ent) then
+	if u.isGhostState(ent, 1) then
 		return true
 	end
 
