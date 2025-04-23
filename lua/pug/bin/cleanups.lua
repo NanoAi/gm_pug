@@ -12,7 +12,7 @@ local function haltPhysEnv( callback )
 		u.addJob(function() 
 			physenv.SetPhysicsPaused( false )
 			print("-- PHYS ENV RESUMED --")
-		end, true, 1)
+		end, 1, 1)
 	end)
 end
 
@@ -91,18 +91,18 @@ end
 function clean.reset()
 	haltPhysEnv( function( done )
 		cleanup.CC_AdminCleanup( nil, nil, {} )
-		u.addJob( function()
+		u.addJob(function()
 			done()
-		end )
+		end)
 	end )
 end
 
 function clean.custom()
 	haltPhysEnv( function( done )
 		hook.Run("PUG.Cleanup.CustomCall")
-		u.addJob( function()
+		u.addJob(function()
 			done()
-		end )
+		end)
 	end )
 end
 

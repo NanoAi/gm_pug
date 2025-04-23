@@ -115,7 +115,7 @@ u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool
 				PUG:Notify( "pug_entfrozen", 1, 1, ply )
 			end
 		end
-	end, true, 1)
+	end, 3, 1)
 end, hooks)
 
 u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)

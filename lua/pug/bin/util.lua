@@ -241,12 +241,12 @@ do
 		jobs[ index ] = job
 	end
 
-	function util.addJob( callback, runNextTick, retry )
+	function util.addJob( callback, runAfterTicks, retry )
 		assert(type(callback) == "function", "The callback must be a function!")
 		local index = #jobs + 1
 		jobs[ index ] = {
 			call = callback,
-			runNextTick = runNextTick or false,
+			runAfterTicks = runAfterTicks or 0,
 			retry = retry or 1,
 		}
 	end
@@ -258,12 +258,12 @@ do
 			if job then
 				local try = job.retry - 1
 
-				if not job.runNextTick then
+				if job.runAfterTicks <= 0 then
 					if job.call() or try <= 0 then
 						job = nil
 					end
 				else
-					job.runNextTick = false
+					job.runAfterTicks = job.runAfterTicks - 1
 				end
 
 				jobProcess(index, job, try)

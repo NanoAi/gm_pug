@@ -1,5 +1,5 @@
 local PUG = PUG
-local timer = timer
+local isvector = isvector
 
 local u = PUG.util
 local hooks = {}
@@ -9,6 +9,7 @@ local settings = {
 	["AllowGravityGun"] = false,
 	["SleepOnDamage"] = false,
 	["TurboPhysics"] = false,
+	["RemoveOOB"] = false,
 	["DamageControl"] = true,
 }
 
@@ -21,6 +22,7 @@ local _s = {
 	sleepOnDamage = settings[ "SleepOnDamage" ],
 	setPlayerHack = settings[ "ApplyPlayerHack" ],
 	turboPhysics = settings[ "TurboPhysics" ],
+	removeOOB = settings[ "RemoveOOB" ],
 }
 
 local function applyPlayerHack( ply )
@@ -31,7 +33,7 @@ local function applyPlayerHack( ply )
 			phys:EnableMotion(false)
 			phys:Sleep()
 		end
-	end, true, 1)
+	end, 1, 1)
 end
 
 --FIXME: Check if "PlayerInitialSpawn" is also needed.
@@ -42,6 +44,28 @@ for _, ply in next, player.GetAll() do
 	if IsValid( ply ) then
 		applyPlayerHack( ply )
 	end
+end
+
+if _s.removeOOB then
+	u.addHook("Think", "RemoveOOB", function()
+		if not _s.removeOOB then return end
+		for _, ent in ents.Iterator() do
+			if u.IsValidPhys(ent) then
+				local pos = ent:GetPhysicsObject():GetPos()
+				if ( isvector(pos) ) then
+					if ( util.IsInWorld(pos) ) then
+						ent.PUG_LastInWorld = pos
+					else
+						local _pos = ent.PUG_LastInWorld
+						if ( isvector(_pos) and _pos:DistToSqr(pos) > 25 ) then
+							ent:Remove()
+							print("[PUG][OOB] Removing Entity[" .. ent:EntIndex() .. "][" .. ent:GetClass() .. "] removed." )
+						end
+					end
+				end
+			end
+		end
+	end)
 end
 
 if _s.turboPhysics then
@@ -56,7 +80,7 @@ if _s.turboPhysics then
 		pe.MaxFrictionMass = 1250
 		physenv.SetPerformanceSettings(pe)
 		print("[PUG][EXPERIMENTAL] !! Physics Getting Lazy... !!")
-	end, true, 1)
+	end, 1, 1)
 else
 	RunConsoleCommand("sv_turbophysics", "0")
 	u.addJob(function()
@@ -64,7 +88,7 @@ else
 			physenv.SetPerformanceSettings(memory)
 			print("[PUG][EXPERIMENTAL] !! Restored Physics Settings. !!")
 		end
-	end, true, 1)
+	end, 1, 1)
 end
 
 u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)

@@ -1,6 +1,7 @@
 local PUG = PUG
 local timer = timer
 local u = PUG.util
+local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 
 local hooks = {}
 local settings = {
@@ -113,6 +114,11 @@ function PUG:Ghost( ent )
 
 	u.addJob(function()
 		if not IsValid( ent ) then return end
+		if not ent.PUGGhost then
+			local out = string.format("[PUG] PUGGhost was not initialized on Entity[%c][%s]", ent:EntIndex(), ent:GetClass())
+			ErrorNoHaltWithStack(out)
+			return
+		end
 
 		if not ent.PUGGhost.colour then
 			ent.PUGGhost.colour = ent:GetColor()
@@ -138,7 +144,7 @@ function PUG:Ghost( ent )
 		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 		ent.PUGGhosted = 2
-	end, true, 1)
+	end, 2, 1)
 
 	ent.PUGGhost.render = ent:GetRenderMode()
 	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
@@ -165,7 +171,7 @@ function PUG:Ghost( ent )
 					phys:EnableCollisions( true )
 					phys:EnableMotion( hasMotion )
 				end
-			end, true, 1)
+			end, 1, 1)
 		end
 	end
 
@@ -280,7 +286,7 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 		end
 
 		return true
-	end, true, 3)
+	end, 1, 3)
 end, hooks)
 
 u.addHook("CanProperty", "Ghosting", function( _, _, ent )
@@ -316,7 +322,7 @@ u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
 					PUG:Ghost( ent )
 					return true
 				end
-			end)
+			end, 1, 1)
 		end
 	end
 end, hooks)
