@@ -1,6 +1,8 @@
 local hook = hook
 local istable = istable
 local cppiOwner = false
+local IsValid = IsValid
+local type = type
 local util = {}
 
 do
