@@ -4,69 +4,69 @@ local cppiOwner = false
 local IsValid = IsValid
 local IsValidModel = util.IsValidModel
 local type = type
-local util = {}
+local u = {}
 
 do
 	local ENT = FindMetaTable("Entity")
 	cppiOwner = ENT.CPPIGetOwner
 end
 
-function util.isGhostState( ent, ghostState )
+function u.isGhostState(ent, ghostState)
 	if not ent.PUGGhosted then return false end
 	if type(ent.PUGGhosted) ~= "number" then return false end
 	return (ent.PUGGhosted == ghostState)
 end
 
-function util.safeSetCollisionGroup( ent, group, pObj )
+function u.safeSetCollisionGroup(ent, group, pObj)
 	if ent:IsPlayerHolding() then return end
 	if ent.PUGGhosted then return end
 	if pObj then pObj:Sleep() end
-	ent:SetCollisionGroup( group )
+	ent:SetCollisionGroup(group)
 	ent:CollisionRulesChanged()
 end
 
-function util.isValidPhys( ent, checkModel )
+function u.isValidPhys(ent, checkModel)
 	local model = nil
 	if not ent then return false end
-	if not IsValid( ent ) then return false end
+	if not IsValid(ent) then return false end
 
 	if checkModel then
 		model = ent.GetModel and ent:GetModel() or nil
 		if not model then return false end
-		if not IsValidModel( model ) then return false end
+		if not IsValidModel(model) then return false end
 	end
 
 	local phys = ent.GetPhysicsObject and ent:GetPhysicsObject() or nil
 	if not phys then return false end
 
-	return IsValid( phys ), phys, model
+	return IsValid(phys), phys, model
 end
 
-function util.isVehicle( ent, basic )
-	if not IsValid( ent ) then return false end
+function u.isVehicle(ent, basic)
+	if not IsValid(ent) then return false end
 
 	if ent:IsVehicle() then return true end
-	if string.find( ent:GetClass(), "vehicle" ) then return true end
+	if string.find(ent:GetClass(), "vehicle") then return true end
 
 	if basic then return false end
 
 	local parent = ent:GetParent()
-	return util.isVehicle( parent, true )
+	return u.isVehicle(parent, true)
 end
 
-function util.callOnConstraints( ent, callback )
-	local constrained = constraint.GetAllConstrainedEntities( ent )
+function u.callOnConstraints(ent, callback)
+	local constrained = constraint.GetAllConstrainedEntities(ent)
 	for _, child in next, constrained do
-		if IsValid( child ) and child ~= ent then
-			callback( child )
+		if IsValid(child) and child ~= ent then
+			callback(child)
 		end
 	end
 end
 
-function util.getCPPIOwner( ent )
-	if type( cppiOwner ) == "function" then
-		local owner = cppiOwner( ent )
-		if type( cppiOwner( ent ) ) ~= "Player" then
+function u.getCPPIOwner(ent)
+	if type(cppiOwner) == "function" then
+		local owner = cppiOwner(ent)
+		if type(cppiOwner(ent)) ~= "Player" then
 			return false
 		else
 			return owner
@@ -74,14 +74,14 @@ function util.getCPPIOwner( ent )
 	end
 end
 
-function util.notifyOwner( msg, msgType, length, ent )
-	local owner = util.getCPPIOwner( ent )
-	if owner and IsValid( owner ) then
-		PUG:Notify( msg, msgType, length, owner )
+function u.notifyOwner(msg, msgType, length, ent)
+	local owner = u.getCPPIOwner(ent)
+	if owner and IsValid(owner) then
+		PUG:Notify(msg, msgType, length, owner)
 	end
 end
 
-function util.entityForceDrop( ent )
+function u.entityForceDrop(ent)
 	if istable(ent.PUGHolding) then
 		for _, ply in next, ent.PUGHolding do
 			if ply and IsValid(ply) then
@@ -90,119 +90,119 @@ function util.entityForceDrop( ent )
 		end
 	end
 	if DropEntityIfHeld then
-		DropEntityIfHeld( ent )
+		DropEntityIfHeld(ent)
 	end
 	ent:ForcePlayerDrop()
 end
 
-function util.entityIsMoving( ent, speed )
-	if type( ent ) ~= "Entity" then return end
-	if not IsValid( ent ) then return end
+function u.entityIsMoving(ent, speed)
+	if type(ent) ~= "Entity" then return end
+	if not IsValid(ent) then return end
 
-	local zero = Vector(0,0,0)
+	local zero = Vector(0, 0, 0)
 	local phys = ent:GetPhysicsObject()
 
 	if IsValid(phys) then
 		local vel = phys:GetVelocity():Distance(zero)
-		return ( vel > speed ), vel
+		return (vel > speed), vel
 	else
 		return false, nil
 	end
 end
 
-function util.physIsMoving( phys, speed )
-	if type( phys ) ~= "PhysObj" then return end
-	if not IsValid( phys ) then return end
+function u.physIsMoving(phys, speed)
+	if type(phys) ~= "PhysObj" then return end
+	if not IsValid(phys) then return end
 
-	local zero = Vector(0,0,0)
+	local zero = Vector(0, 0, 0)
 
 	if IsValid(phys) then
 		local vel = phys:GetVelocity():Distance(zero)
-		return ( vel > speed ), vel
+		return (vel > speed), vel
 	else
 		return false, nil
 	end
 end
 
-function util.sleepEntity( ent, dontSleep )
-	if type( ent ) ~= "Entity" then return end
-	if not IsValid( ent ) then return end
+function u.sleepEntity(ent, dontSleep)
+	if type(ent) ~= "Entity" then return end
+	if not IsValid(ent) then return end
 
-	local zero = Vector(0,0,0)
+	local zero = Vector(0, 0, 0)
 	local phys = ent:GetPhysicsObject()
 
 	if IsValid(phys) then
-		phys:SetVelocityInstantaneous( zero )
-		phys:AddAngleVelocity( phys:GetAngleVelocity() * -1 )
+		phys:SetVelocityInstantaneous(zero)
+		phys:AddAngleVelocity(phys:GetAngleVelocity() * -1)
 		if not dontSleep then
 			phys:Sleep()
 		end
 	end
 end
 
-function util.freezeEntity( ent )
-	if type( ent ) ~= "Entity" then return end
-	if not IsValid( ent ) then return end
+function u.freezeEntity(ent)
+	if type(ent) ~= "Entity" then return end
+	if not IsValid(ent) then return end
 
 	local phys = ent:GetPhysicsObject()
 
 	if IsValid(phys) then
-		phys:EnableMotion( false )
+		phys:EnableMotion(false)
 	end
 end
 
-function util.isEntityPicked(ent)
+function u.isEntityPicked(ent)
 	if not istable(ent.PUGHolding) then
 		return false
 	end
-	return ( next( ent.PUGHolding ) ~= nil )
+	return (next(ent.PUGHolding) ~= nil)
 end
 
-function util.isEntityHeld( ent )
+function u.isEntityHeld(ent)
 	if ent.PUGPicked then return true end
 	if ent:IsPlayerHolding() then return true end
-	return util.isEntityPicked(ent)
+	return u.isEntityPicked(ent)
 end
 
-function util.addEntityHolder( ent, ply )
+function u.addEntityHolder(ent, ply)
 	local steamID = ply:SteamID()
 	ent.PUGHolding = ent.PUGHolding or {}
 	ent.PUGHolding[steamID] = ply
 end
 
-function util.removeEntityHolder( ent, ply )
+function u.removeEntityHolder(ent, ply)
 	local steamID = ply:SteamID()
 	ent.PUGHolding = ent.PUGHolding or {}
 	ent.PUGHolding[steamID] = nil
 end
 
-function util.getSettings( defaults )
+function u.getSettings(defaults)
 	local module = PUG.currentModule or {}
 
 	if not module.data then
 		module = defaults
 	else
-		module = table.Merge( defaults, module.data.settings or {} )
+		module = table.Merge(defaults, module.data.settings or {})
 	end
 
 	return module, module == defaults
 end
 
-function util.addHook( callID, id, callback, store )
-	assert( istable( store ) == true, "A storage table must be passed!" )
+function u.addHook(callID, id, callback, store)
+	assert(istable(store) == true, "A storage table must be passed!")
 
 	local index = #store + 1
 	id = "PUG." .. id
 
-	hook.Add( callID, id, callback )
-	store[ index ] = store[ index ] or {}
-	store[ index ][ callID ] = id
+	hook.Add(callID, id, callback)
+	store[index] = store[index] or {}
+	store[index][callID] = id
 
 	return store, index
 end
 
-function util.remHook( callID, id, store )
-	assert( istable( store ) == true, "A storage table must be passed!" )
+function u.remHook(callID, id, store)
+	assert(istable(store) == true, "A storage table must be passed!")
 	id = "PUG." .. id
 
 	for index, getTable in next, store do
@@ -210,35 +210,35 @@ function util.remHook( callID, id, store )
 			if (cid == callID and hid == id) then
 				print("[PUG][HOOKS] Removing " .. hookID .. " @ " .. callID)
 				hook.Remove(callID, hookID)
-				store[ index ][ callID ] = nil
+				store[index][callID] = nil
 				break
 			end
 		end
 	end
 end
 
-function util.addTimer( timerID, delay, reps, callback, store )
-	assert( istable( store ) == true, "A storage table must be passed!" )
+function u.addTimer(timerID, delay, reps, callback, store)
+	assert(istable(store) == true, "A storage table must be passed!")
 
 	local index = #store + 1
 	timerID = "PUG." .. timerID
 
-	timer.Create( timerID, delay, reps, callback )
-	store[ index ] = store[ index ] or {}
-	store[ index ][ timerID ] = delay
+	timer.Create(timerID, delay, reps, callback)
+	store[index] = store[index] or {}
+	store[index][timerID] = delay
 
 	return store
 end
 
-function util.tableReduce(func, tbl)
+function u.tableReduce(func, tbl)
 	local out = 0
 	local head = tbl[1]
 	local err = "May contain only numbers."
 
-	assert( type(head) == "number", err )
+	assert(type(head) == "number", err)
 
 	for _, v in next, tbl do
-		assert( type(v) == "number", err )
+		assert(type(v) == "number", err)
 		out = func(out, v)
 	end
 
@@ -249,14 +249,14 @@ do
 	local jobs = {}
 
 	local function jobProcess(index, job, try)
-		jobs[ index ].retry = try
-		jobs[ index ] = job
+		jobs[index].retry = try
+		jobs[index] = job
 	end
 
-	function util.addJob( callback, runAfterTicks, retry )
+	function u.addJob(callback, runAfterTicks, retry)
 		assert(type(callback) == "function", "The callback must be a function!")
 		local index = #jobs + 1
-		jobs[ index ] = {
+		jobs[index] = {
 			call = callback,
 			runAfterTicks = runAfterTicks or 0,
 			retry = retry or 1,
@@ -266,7 +266,7 @@ do
 	hook.Add("Think", "PUG_JobProcessor", function()
 		local index = #jobs
 		for i = 1, 25 do
-			local job = jobs[ index ]
+			local job = jobs[index]
 			if job then
 				local try = job.retry - 1
 
@@ -285,4 +285,4 @@ do
 	end)
 end
 
-return util
+return u
