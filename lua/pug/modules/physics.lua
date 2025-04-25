@@ -65,7 +65,7 @@ if _s.removeOOB then
 				end
 			end
 		end
-	end)
+	end, hooks)
 end
 
 if _s.turboPhysics then
