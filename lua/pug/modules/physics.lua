@@ -13,19 +13,19 @@ local settings = {
 	["DamageControl"] = true,
 }
 
-settings = u.getSettings( settings )
+settings = u.getSettings(settings)
 
 local memory = {}
 local _s = {
-	allowGravGun = settings[ "AllowGravityGun" ],
-	damageControl = settings[ "DamageControl" ],
-	sleepOnDamage = settings[ "SleepOnDamage" ],
-	setPlayerHack = settings[ "ApplyPlayerHack" ],
-	turboPhysics = settings[ "TurboPhysics" ],
-	removeOOB = settings[ "RemoveOOB" ],
+	allowGravGun = settings["AllowGravityGun"],
+	damageControl = settings["DamageControl"],
+	sleepOnDamage = settings["SleepOnDamage"],
+	setPlayerHack = settings["ApplyPlayerHack"],
+	turboPhysics = settings["TurboPhysics"],
+	removeOOB = settings["RemoveOOB"],
 }
 
-local function applyPlayerHack( ply )
+local function applyPlayerHack(ply)
 	if not _s.setPlayerHack then return end
 	u.addJob(function()
 		local phys = ply:GetPhysicsObject()
@@ -41,32 +41,50 @@ u.addHook("PlayerInitialSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
 u.addHook("PlayerSpawn", "PUG_PlayerSpawn", applyPlayerHack, hooks)
 
 for _, ply in next, player.GetAll() do
-	if IsValid( ply ) then
-		applyPlayerHack( ply )
+	if IsValid(ply) then
+		applyPlayerHack(ply)
 	end
 end
 
 if _s.removeOOB then
 	u.addHook("Think", "RemoveOOB", function()
-		if not _s.removeOOB then return end
+		if (not _s.removeOOB) then return end
+		local iter = 0
 		for _, ent in ents.Iterator() do
-			local valid, phys = u.isValidPhys(ent)
-			if valid and phys then
-				local pos = phys:GetPos()
-				if ( isvector(pos) ) then
-					if ( util.IsInWorld(pos) ) then
-						ent.PUG_LastInWorld = pos
+			if (iter > 3) then break end
+			repeat
+				if (ent and ent.PUGBadEnt) then
+					if (not ent.PUG_OOB) then
+						ent.PUG_OOB = true
+						do break end -- Continue to the next iteration.
 					else
-						local _pos = ent.PUG_LastInWorld
-						if ( isvector(_pos) and _pos:DistToSqr(pos) > 25 ) then
-							ent:Remove()
-							print("[PUG][OOB] Removing Entity[" .. ent:EntIndex() .. "][" .. ent:GetClass() .. "] removed." )
+						ent.PUG_OOB = nil
+						iter = iter + 1
+					end
+				else
+					do break end
+				end
+
+				local valid, phys = u.isValidPhys(ent, false)
+				if (valid and phys) then
+					local pos = phys:GetPos()
+					if (pos and isvector(pos)) then
+						if (util.IsInWorld(pos)) then
+							ent.PUG_LastInWorld = pos
+						else
+							local _pos = ent.PUG_LastInWorld
+							if (_pos and isvector(_pos) and _pos:DistToSqr(pos) > 30) then
+								print("[PUG][OOB] Removing Entity[" .. ent:EntIndex() .. "][" .. ent:GetClass() .. "].")
+								SafeRemoveEntity(ent)
+							end
 						end
 					end
 				end
-			end
+			until true
 		end
 	end, hooks)
+else
+	u.remHook("Think", "RemoveOOB", hooks)
 end
 
 if _s.turboPhysics then
@@ -99,12 +117,12 @@ u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 	end
 
 	local ent = dmg:GetInflictor()
-	local valid = IsValid( ent )
+	local valid = IsValid(ent)
 	local damageType = dmg:GetDamageType()
 
 	if _s.allowGravGun and valid then
 		local phys = ent:GetPhysicsObject()
-		if IsValid( phys ) and phys:HasGameFlag( FVPHYSICS_WAS_THROWN ) then
+		if IsValid(phys) and phys:HasGameFlag(FVPHYSICS_WAS_THROWN) then
 			return
 		end
 	end
@@ -115,7 +133,7 @@ u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 		end
 		return true
 	else
-		if valid and ( PUG:isGoodEnt( ent ) or ent:IsWeapon() ) then
+		if valid and (PUG:isGoodEnt(ent) or ent:IsWeapon()) then
 			return
 		end
 	end

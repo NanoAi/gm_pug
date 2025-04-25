@@ -25,12 +25,16 @@ function util.safeSetCollisionGroup( ent, group, pObj )
 	ent:CollisionRulesChanged()
 end
 
-function util.isValidPhys( ent )
+function util.isValidPhys( ent, checkModel )
+	local model = nil
+	if not ent then return false end
 	if not IsValid( ent ) then return false end
-	local model = ent.GetModel and ent:GetModel() or nil
 
-	if not model then return false end
-	if not IsValidModel( model ) then return false end
+	if checkModel then
+		model = ent.GetModel and ent:GetModel() or nil
+		if not model then return false end
+		if not IsValidModel( model ) then return false end
+	end
 
 	local phys = ent.GetPhysicsObject and ent:GetPhysicsObject() or nil
 	if not phys then return false end
@@ -184,26 +188,33 @@ function util.getSettings( defaults )
 	return module, module == defaults
 end
 
-function util.addHook( hookID, id, callback, store )
+function util.addHook( callID, id, callback, store )
 	assert( istable( store ) == true, "A storage table must be passed!" )
 
 	local index = #store + 1
 	id = "PUG." .. id
 
-	hook.Add( hookID, id, callback )
+	hook.Add( callID, id, callback )
 	store[ index ] = store[ index ] or {}
-	store[ index ][ hookID ] = id
+	store[ index ][ callID ] = id
 
 	return store, index
 end
 
-function util.remHook( hookID, id, index, store )
+function util.remHook( callID, id, store )
 	assert( istable( store ) == true, "A storage table must be passed!" )
 	id = "PUG." .. id
 
-	hook.Remove( hookID, id )
-	store[ index ] = store[ index ] or {}
-	store[ index ][ hookID ] = nil
+	for index, getTable in next, store do
+		for cid, hid in next, getTable do
+			if (cid == callID and hid == id) then
+				print("[PUG][HOOKS] Removing " .. hookID .. " @ " .. callID)
+				hook.Remove(callID, hookID)
+				store[ index ][ callID ] = nil
+				break
+			end
+		end
+	end
 end
 
 function util.addTimer( timerID, delay, reps, callback, store )

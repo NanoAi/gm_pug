@@ -18,7 +18,7 @@ end
 
 function clean.unfrozen()
 	for _, ent in next, ents.GetAll() do
-		local valid, phys = u.isValidPhys( ent )
+		local valid, phys = u.isValidPhys( ent, true )
 		if valid and ent.PUGBadEnt then
 			phys:EnableMotion( false )
 			if phys:IsPenetrating() and not hasConstraints( ent ) then
@@ -34,7 +34,7 @@ end
 
 function clean.nonContraptions()
 	for _, ent in next, ents.GetAll() do
-		local valid, phys = u.isValidPhys( ent )
+		local valid, phys = u.isValidPhys( ent, true )
 		if valid and ent.PUGBadEnt then
 			if phys:IsMotionEnabled() and not hasConstraints( ent ) then
 				ent:Remove()
@@ -49,7 +49,7 @@ function clean.clusters()
 		clean.unfrozen()
 
 		for _, v in next, ents.GetAll() do
-			local valid, phys = u.isValidPhys( v )
+			local valid, phys = u.isValidPhys( v, true )
 			if valid and phys then
 				if phys:IsMotionEnabled() then
 					if v.isFadingDoor and ent.PUGBadEnt then
