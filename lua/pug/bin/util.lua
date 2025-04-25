@@ -2,6 +2,7 @@ local hook = hook
 local istable = istable
 local cppiOwner = false
 local IsValid = IsValid
+local IsValidModel = util.IsValidModel
 local type = type
 local util = {}
 
@@ -29,7 +30,7 @@ function util.isValidPhys( ent )
 	local model = ent.GetModel and ent:GetModel() or nil
 
 	if not model then return false end
-	if not util.IsValidModel( model ) then return false end
+	if not IsValidModel( model ) then return false end
 
 	local phys = ent.GetPhysicsObject and ent:GetPhysicsObject() or nil
 	if not phys then return false end
