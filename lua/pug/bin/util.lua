@@ -33,9 +33,8 @@ function util.isValidPhys( ent )
 
 	local phys = ent.GetPhysicsObject and ent:GetPhysicsObject() or nil
 	if not phys then return false end
-	if not IsValid( phys ) then return false end
 
-	return true, phys, model
+	return IsValid( phys ), phys, model
 end
 
 function util.isVehicle( ent, basic )

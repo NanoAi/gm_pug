@@ -50,8 +50,9 @@ if _s.removeOOB then
 	u.addHook("Think", "RemoveOOB", function()
 		if not _s.removeOOB then return end
 		for _, ent in ents.Iterator() do
-			if u.isValidPhys(ent) then
-				local pos = ent:GetPhysicsObject():GetPos()
+			local valid, phys = u.isValidPhys(ent)
+			if valid and phys then
+				local pos = phys:GetPos()
 				if ( isvector(pos) ) then
 					if ( util.IsInWorld(pos) ) then
 						ent.PUG_LastInWorld = pos
