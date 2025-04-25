@@ -50,7 +50,7 @@ if _s.removeOOB then
 	u.addHook("Think", "RemoveOOB", function()
 		if not _s.removeOOB then return end
 		for _, ent in ents.Iterator() do
-			if u.IsValidPhys(ent) then
+			if u.isValidPhys(ent) then
 				local pos = ent:GetPhysicsObject():GetPos()
 				if ( isvector(pos) ) then
 					if ( util.IsInWorld(pos) ) then
