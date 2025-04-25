@@ -1,6 +1,11 @@
 {
-    "Lua.diagnostics.disable": [
-        "undefined-global",
-        "undefined-field"
-    ]
+  "Lua.diagnostics.disable": ["undefined-global", "undefined-field"],
+  "vsicons.associations.files": [
+    {
+      "icon": "lua",
+      "extensions": ["lua"],
+      "format": "svg"
+    }
+  ],
+  "indentRainbow.includedLanguages": ["lua", "glua"]
 }
