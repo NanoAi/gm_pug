@@ -99,11 +99,15 @@ function PUG:Ghost( ent )
 	if not ent:IsSolid() then return end
 	if type( u.getCPPIOwner( ent ) ) ~= "Player" then return end
 
-	ent.PUGGhost = ent.PUGGhost or {}
-	ent.PUGGhost.collision = ent.PUGGhost.collision or ent:GetCollisionGroup()
+	ent.PUGGhost = ent.PUGGhost or { Memory = {} }
+	ent.PUGGhost.Collision = ent.PUGGhost.Collision or ent:GetCollisionGroup()
 
-	-- If and old collision group was set get it.
+	ent.PUGGhost.Memory.FPPCollisionGroup = ent.OldCollisionGroup
+	ent.PUGGhost.Memory.DPPCollisionGroup = ent.DPP_oldCollision
+
 	ent.FPPAntiSpamIsGhosted = nil
+	ent.OldCollisionGroup = nil
+	ent.DPP_oldCollision = nil
 	ent.PUGGhosted = 1
 
 	-- Setting this to a timer to avoid possible collisions.
@@ -115,16 +119,16 @@ function PUG:Ghost( ent )
 			return
 		end
 
-		if not ent.PUGGhost.colour then
-			ent.PUGGhost.colour = ent:GetColor()
+		if not ent.PUGGhost.Colour then
+			ent.PUGGhost.Colour = ent:GetColor()
 
 			-- Compatibility with other Ghosting
 			if ent.FPPOldColor then -- FPP
-				ent.PUGGhost.colour = ent.FPPOldColor
+				ent.PUGGhost.Colour = ent.FPPOldColor
 			end
 
 			if ent.__DPPColor then -- DPP
-				ent.PUGGhost.colour = ent.__DPPColor
+				ent.PUGGhost.Colour = ent.__DPPColor
 			end
 
 			ent.FPPOldColor = nil
@@ -135,24 +139,25 @@ function PUG:Ghost( ent )
 			ent.PUGGhost.material = ent:GetMaterial()
 		end
 
-		if ent.OldCollisionGroup then -- FPP Compatibility
-			ent.PUGGhost.collision = ent.OldCollisionGroup
-			ent.OldCollisionGroup = nil
+		if ent.PUGGhost.Memory.FPPCollisionGroup then
+			ent.PUGGhost.Collision = ent.PUGGhost.Memory.FPPCollisionGroup
+			ent.PUGGhost.Memory.FPPCollisionGroup = nil
 		end
-	
-		if ent.DPP_oldCollision then -- DPP Compatibility
-			ent.PUGGhost.collision = ent.DPP_oldCollision
-			ent.DPP_oldCollision = nil
+
+		if ent.PUGGhost.Memory.DPPCollisionGroup then
+			ent.PUGGhost.Collision = ent.PUGGhost.Memory.DPPCollisionGroup
+			ent.PUGGhost.Memory.DPPCollisionGroup = nil
 		end
 
 		if not _s.ghostNoCollide then
-			if ent.PUGGhost.collision ~= COLLISION_GROUP_WORLD then
+			if ent.PUGGhost.Collision ~= COLLISION_GROUP_WORLD then
 				u.setCollisionGroup(ent, COLLISION_GROUP_DEBRIS_TRIGGER, true)
 			end
 		end
 
 		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
+		ent.PUGGhost.Memory = {}
 		ent.PUGGhosted = 2
 	end)
 
@@ -163,7 +168,7 @@ function PUG:Ghost( ent )
 	if _s.ghostNoCollide then
 		u.setCollisionGroup(ent, COLLISION_GROUP_WORLD)
 	else
-		if ent.PUGGhost.collision ~= COLLISION_GROUP_WORLD then
+		if ent.PUGGhost.Collision ~= COLLISION_GROUP_WORLD then
 			u.setCollisionGroup(ent, COLLISION_GROUP_DEBRIS_TRIGGER)
 		end
 	end
@@ -211,15 +216,15 @@ function PUG:UnGhost( ent )
 	ent:DrawShadow( true )
 
 	ent:SetRenderMode( ent.PUGGhost.render or RENDERMODE_NORMAL )
-	ent:SetColor( ent.PUGGhost.colour or Color( 255, 255, 255, 255) )
+	ent:SetColor( ent.PUGGhost.Colour or Color( 255, 255, 255, 255) )
 	ent:SetMaterial( ent.PUGGhost.material or '' )
 
 	local newCollisionGroup = COLLISION_GROUP_INTERACTIVE
 
 	if PUG:isGoodEnt( ent ) then
-		newCollisionGroup = ent.PUGGhost.collision
+		newCollisionGroup = ent.PUGGhost.Collision
 	else
-		if ent.PUGGhost.collision == COLLISION_GROUP_WORLD then
+		if ent.PUGGhost.Collision == COLLISION_GROUP_WORLD then
 			newCollisionGroup = COLLISION_GROUP_WORLD
 		else
 			if ent.PUGFrozen then
@@ -279,12 +284,14 @@ u.addHook("PUG.isBadEnt", "GhostHuge", function( ent, isBadEnt )
 	u.addJob(function()
 		if not isBadEnt then return end
 		local valid, phys = u.isValidPhys(ent, false)
+		print("[PUG] VALID CHECK: ", valid, phys)
 		
 		if not valid then return end
 		if not ent:IsSolid() then return end
 		if PUG:isGoodEnt(ent) then return end
 
 		local min, max = phys:GetAABB()
+		print('Size is: ' .. min:Distance(max))
 		if min:Distance(max) > _s.ghostHugeScale then
 			if not IsValid( ent ) then return end
 			PUG:Ghost( ent )
@@ -348,7 +355,7 @@ u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
 				if IsValid( ply ) and IsValid( ent ) and isTrap( ent ) then
 					PUG:Notify( "pug_doorghost", 1, 5, ply )
 					ent.PUGGhost = ent.PUGGhost or {}
-					ent.PUGGhost.collision = COLLISION_GROUP_INTERACTIVE
+					ent.PUGGhost.Collision = COLLISION_GROUP_INTERACTIVE
 					ent:oldFadeDeactivate()
 					PUG:Ghost( ent )
 					return true

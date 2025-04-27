@@ -27,8 +27,13 @@ function u.safeSetCollisionGroup(ent, group, pObj)
 end
 
 function u.setCollisionGroup(ent, group, update)
+	if ent.CollisionGroup == group then 
+		return
+	end
+
 	ent:SetCollisionGroup(group)
 	ent.CollisionGroup = group
+
 	if update then
 		ent:CollisionRulesChanged()
 	end
@@ -219,6 +224,7 @@ function u.addHook(callID, id, callback, store, removeCondition)
 	local index = #store + 1
 	id = "PUG." .. id
 
+	--[[
 	if (removeCondition) then
 		if isbool(removeCondition) and removeCondition then
 			u.remHook(callID, id, store)
@@ -229,6 +235,7 @@ function u.addHook(callID, id, callback, store, removeCondition)
 			return store, index - 1
 		end
 	end
+	--]]
 
 	hook.Add(callID, id, callback)
 	store[index] = store[index] or {}
