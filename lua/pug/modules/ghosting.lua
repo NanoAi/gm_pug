@@ -95,7 +95,6 @@ function PUG:Ghost( ent )
 	if not ent:IsSolid() then return end
 	if type( u.getCPPIOwner( ent ) ) ~= "Player" then return end
 
-	ent.FPPAntiSpamIsGhosted = nil -- Override FPP Ghosting.
 	ent.PUGGhost = ent.PUGGhost or {}
 	ent.PUGGhost.collision = ent.PUGGhost.collision or ent:GetCollisionGroup()
 
@@ -184,6 +183,12 @@ function PUG:UnGhost( ent )
 
 	local trap = isTrap(ent)
 	local moving = u.entityIsMoving(ent, 9.3)
+
+	if ent.FPPAntiSpamIsGhosted then -- If we have FPP UnGhost with FPP as well.
+		if (FPP and FPP.UnGhost) then
+			FPP.UnGhost(nil, ent) -- Request FPP to UnGhost so we can ghost.
+		end
+	end
 
 	if not ( trap or moving ) then
 		u.entityForceDrop( ent )
