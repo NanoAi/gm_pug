@@ -22,7 +22,21 @@ function u.safeSetCollisionGroup(ent, group, pObj)
 	if ent.PUGGhosted then return end
 	if pObj then pObj:Sleep() end
 	ent:SetCollisionGroup(group)
+	ent.CollisionGroup = group
 	ent:CollisionRulesChanged()
+end
+
+function u.setCollisionGroup(ent, group, update)
+	if ent.CollisionGroup == group then 
+		return
+	end
+
+	ent:SetCollisionGroup(group)
+	ent.CollisionGroup = group
+
+	if update then
+		ent:CollisionRulesChanged()
+	end
 end
 
 function u.isValidPhys(ent, checkModel)
@@ -188,19 +202,6 @@ function u.getSettings(defaults)
 	return module, module == defaults
 end
 
-function u.addHook(callID, id, callback, store)
-	assert(istable(store) == true, "A storage table must be passed!")
-
-	local index = #store + 1
-	id = "PUG." .. id
-
-	hook.Add(callID, id, callback)
-	store[index] = store[index] or {}
-	store[index][callID] = id
-
-	return store, index
-end
-
 function u.remHook(callID, id, store)
 	assert(istable(store) == true, "A storage table must be passed!")
 	id = "PUG." .. id
@@ -215,6 +216,32 @@ function u.remHook(callID, id, store)
 			end
 		end
 	end
+end
+
+function u.addHook(callID, id, callback, store, removeCondition)
+	assert(istable(store) == true, "A storage table must be passed!")
+
+	local index = #store + 1
+	id = "PUG." .. id
+
+	--[[
+	if (removeCondition) then
+		if isbool(removeCondition) and removeCondition then
+			u.remHook(callID, id, store)
+			return store, index - 1
+		end
+		if isfunction(removeCondition) and removeCondition() then
+			u.remHook(callID, id, store)
+			return store, index - 1
+		end
+	end
+	--]]
+
+	hook.Add(callID, id, callback)
+	store[index] = store[index] or {}
+	store[index][callID] = id
+
+	return store, index
 end
 
 function u.addTimer(timerID, delay, reps, callback, store)
@@ -260,18 +287,20 @@ do
 			call = callback,
 			runAfterTicks = runAfterTicks or 0,
 			retry = retry or 1,
+			response = false,
 		}
 	end
 
-	hook.Add("Think", "PUG_JobProcessor", function()
+	hook.Add("Tick", "PUG_JobProcessor", function()
 		local index = #jobs
 		for i = 1, 25 do
 			local job = jobs[index]
-			if job then
+			if job and not job.response then
 				local try = job.retry - 1
 
 				if job.runAfterTicks <= 0 then
-					if job.call() or try <= 0 then
+					job.response = job.call()
+					if job.response or try <= 0 then
 						job = nil
 					end
 				else

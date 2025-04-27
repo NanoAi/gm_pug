@@ -1,5 +1,9 @@
 {
-  "Lua.diagnostics.disable": ["undefined-global", "undefined-field"],
+  "Lua.diagnostics.disable": [
+    "undefined-global",
+    "undefined-field",
+    "deprecated"
+  ],
   "vsicons.associations.files": [
     {
       "icon": "lua",

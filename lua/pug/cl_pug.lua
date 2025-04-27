@@ -2,6 +2,7 @@ local frame = {}
 local dtree = {}
 local readFile = ""
 local rData = {}
+local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 
 local function showSettings( data, len )
 	dtree:Clear()
@@ -159,11 +160,17 @@ local function init()
 			end
 		end
 	end
+
+	return frame
 end
 
 hook.Add("InitPostEntity", "PUG.reee", init)
 
 net.Receive("pug.menu", function()
+	if not frame.IsVisible then
+		frame = init()
+		ErrorNoHaltWithStack('Frame Not Found Recreating.')
+	end
 	if not frame:IsVisible() then
 		frame:Show()
 		frame:MakePopup()
