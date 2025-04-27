@@ -12,7 +12,7 @@ local settings = {
 	["GhostOnSetPos"] = true,
 	["GhostOnSpawn"] = true,
 	["GhostHugeOnSpawn"] = false,
-	["HowBigIsHuge"] = 2140,
+	["HowBigIsHuge"] = 655,
 	["GhostNoCollide"] = false,
 	["GroupOverride"] = true,
 	["TryUnGhostOnSpawn"] = true,
@@ -288,23 +288,33 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 end, hooks)
 
 u.addHook("PUG.isBadEnt", "GhostHuge", function( ent, isBadEnt )
+	print('CHECKING IF HUGE: ' .. tostring(_s.ghostHugeOnSpawn))
+
+	print('1')
 	if not _s.ghostHugeOnSpawn then return end
 
-	u.addJob(function()
-		if not isBadEnt then return end
-		local valid, phys = u.isValidPhys(ent, false)
-		
-		if not valid then return end
-		if not ent:IsSolid() then return end
-		if PUG:isGoodEnt(ent) then return end
+	print("2")
+	if not isBadEnt then return end
+	local valid, phys = u.isValidPhys(ent, false)
 
-		local min, max = phys:GetAABB()
-		if min:Distance(max) >= _s.ghostHugeScale then
-			if not IsValid( ent ) then return end
-			PUG:Ghost( ent )
-			return true
-		end
-	end, 1, 3)
+	print("3")
+
+	if not valid then return end
+	if not ent:IsSolid() then return end
+	if PUG:isGoodEnt(ent) then return end
+
+	print("4")
+
+	local min, max = phys:GetAABB()
+
+	print("5 | " .. tostring(min:Distance(max)))
+
+	print(tostring(min:Distance(max) >= _s.ghostHugeScale), _s.ghostHugeScale)
+
+	if min:Distance(max) >= _s.ghostHugeScale then
+		print('penis')
+		PUG:Ghost( ent )
+	end
 end, hooks, _s.ghostHugeOnSpawn)
 
 u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
