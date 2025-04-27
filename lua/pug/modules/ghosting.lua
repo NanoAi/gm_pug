@@ -8,6 +8,8 @@ local settings = {
 	["GhostColour"] = {4, 20, 36, 250},
 	["GhostOnSetPos"] = true,
 	["GhostOnSpawn"] = true,
+	["GhostHugeOnSpawn"] = false,
+	["HowBigIsHuge"] = 2048,
 	["GhostNoCollide"] = false,
 	["GroupOverride"] = true,
 	["TryUnGhostOnSpawn"] = true,
@@ -21,6 +23,8 @@ local _s = {
 	ghostColour = settings[ "GhostColour" ],
 	ghostSetPos = settings[ "GhostOnSetPos" ],
 	ghostOnSpawn = settings[ "GhostOnSpawn" ],
+	ghostHugeOnSpawn = settings["GhostHugeOnSpawn"]
+	ghostHugeScale = settings["HowBigIsHuge"]
 	ghostNoCollide = settings[ "GhostNoCollide" ],
 	groupOverride = settings[ "GroupOverride" ],
 	tryUnGhostOnSpawn = settings[ "TryUnGhostOnSpawn" ],
@@ -99,17 +103,7 @@ function PUG:Ghost( ent )
 	ent.PUGGhost.collision = ent.PUGGhost.collision or ent:GetCollisionGroup()
 
 	-- If and old collision group was set get it.
-	if ent.OldCollisionGroup then -- FPP Compatibility
-		ent.PUGGhost.collision = ent.OldCollisionGroup
-	end
-
-	if ent.DPP_oldCollision then -- DPP Compatibility
-		ent.PUGGhost.collision = ent.DPP_oldCollision
-	end
-
 	ent.FPPAntiSpamIsGhosted = nil
-	ent.OldCollisionGroup = nil
-	ent.DPP_oldCollision = nil
 	ent.PUGGhosted = 1
 
 	-- Setting this to a timer to avoid possible collisions.
@@ -141,7 +135,22 @@ function PUG:Ghost( ent )
 			ent.PUGGhost.material = ent:GetMaterial()
 		end
 
-		---@diagnostic disable-next-line: deprecated
+		if ent.OldCollisionGroup then -- FPP Compatibility
+			ent.PUGGhost.collision = ent.OldCollisionGroup
+			ent.OldCollisionGroup = nil
+		end
+	
+		if ent.DPP_oldCollision then -- DPP Compatibility
+			ent.PUGGhost.collision = ent.DPP_oldCollision
+			ent.DPP_oldCollision = nil
+		end
+
+		if not _s.ghostNoCollide then
+			if ent.PUGGhost.collision ~= COLLISION_GROUP_WORLD then
+				u.setCollisionGroup(ent, COLLISION_GROUP_DEBRIS_TRIGGER, true)
+			end
+		end
+
 		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
 		ent.PUGGhosted = 2
@@ -227,13 +236,6 @@ function PUG:UnGhost( ent )
 	return true
 end
 
-if FPP then
-	PUG.FPPGhostFreeze = FPP.AntiSpam.GhostFreeze
-	function FPP.AntiSpam.GhostFreeze(ent, phys)
-		PUG:Ghost(ent) 
-	end
-end
-
 u.addHook("PUG.PostSetPos", "Ghosting", function( ent )
 	if not _s.ghostSetPos then return end
 	u.addJob(function()
@@ -271,6 +273,26 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 	end)
 end, hooks)
 
+u.addHook("PUG.isBadEnt", "GhostHuge", function( ent, isBadEnt )
+	if _s.ghostHugeOnSpawn then return end
+
+	u.addJob(function()
+		if not isBadEnt then return end
+		local valid, phys = u.isValidPhys(ent, false)
+		
+		if not valid then return end
+		if not ent:IsSolid() then return end
+		if PUG:isGoodEnt(ent) then return end
+
+		local min, max = phys:GetAABB()
+		if min:Distance(max) > _s.ghostHugeScale then
+			if not IsValid( ent ) then return end
+			PUG:Ghost( ent )
+			return true
+		end
+	end, 1, 3)
+end, hooks, _s.ghostHugeOnSpawn)
+
 u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 	if not _s.ghostOnSpawn then return end
 
@@ -296,7 +318,7 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 
 		return true
 	end, 1, 3)
-end, hooks)
+end, hooks, _s.ghostOnSpawn)
 
 u.addHook("CanProperty", "Ghosting", function( _, _, ent )
 	if u.isGhostState(ent, 1) then

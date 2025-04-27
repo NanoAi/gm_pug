@@ -197,19 +197,6 @@ function u.getSettings(defaults)
 	return module, module == defaults
 end
 
-function u.addHook(callID, id, callback, store)
-	assert(istable(store) == true, "A storage table must be passed!")
-
-	local index = #store + 1
-	id = "PUG." .. id
-
-	hook.Add(callID, id, callback)
-	store[index] = store[index] or {}
-	store[index][callID] = id
-
-	return store, index
-end
-
 function u.remHook(callID, id, store)
 	assert(istable(store) == true, "A storage table must be passed!")
 	id = "PUG." .. id
@@ -224,6 +211,30 @@ function u.remHook(callID, id, store)
 			end
 		end
 	end
+end
+
+function u.addHook(callID, id, callback, store, removeCondition)
+	assert(istable(store) == true, "A storage table must be passed!")
+
+	local index = #store + 1
+	id = "PUG." .. id
+
+	if (removeCondition) then
+		if isbool(removeCondition) and removeCondition then
+			u.remHook(callID, id, store)
+			return store, index - 1
+		end
+		if isfunction(removeCondition) and removeCondition() then
+			u.remHook(callID, id, store)
+			return store, index - 1
+		end
+	end
+
+	hook.Add(callID, id, callback)
+	store[index] = store[index] or {}
+	store[index][callID] = id
+
+	return store, index
 end
 
 function u.addTimer(timerID, delay, reps, callback, store)
