@@ -287,6 +287,7 @@ do
 			call = callback,
 			runAfterTicks = runAfterTicks or 0,
 			retry = retry or 1,
+			response = false,
 		}
 	end
 
@@ -294,11 +295,12 @@ do
 		local index = #jobs
 		for i = 1, 25 do
 			local job = jobs[index]
-			if job then
+			if job and not job.response then
 				local try = job.retry - 1
 
 				if job.runAfterTicks <= 0 then
-					if job.call() or try <= 0 then
+					job.response = job.call()
+					if job.response or try <= 0 then
 						job = nil
 					end
 				else

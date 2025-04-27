@@ -158,7 +158,9 @@ do
 	function ENT:SetPos( pos )
 		PUG._SetPos( self, pos )
 		timer.Simple(0, function()
-			hook.Run( "PUG.PostSetPos", self, pos )
+			if not self.PUGSpawning then
+				hook.Run( "PUG.PostSetPos", self, pos )
+			end
 		end)
 	end
 
@@ -205,10 +207,16 @@ local function getBadEnt( ent )
 end
 
 hook.Add("OnEntityCreated", "PUG.EntityCreated", function( ent )
+	ent.PUGSpawning = true
 	getBadEnt( ent )
 	u.addJob(function()
 		hook.Run( "PUG.isBadEnt", ent, getBadEnt(ent) )
-	end)
+	end, 0, 1)
+	u.addJob(function()
+		if (ent and ent.PUGSpawning) then
+			ent.PUGSpawning = nil
+		end
+	end, 1, 2)
 end)
 
 hook.Add("PUG_PostPhysgunPickup", "main", function( ply, ent, canPickup )
