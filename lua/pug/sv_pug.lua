@@ -209,12 +209,10 @@ hook.Add("OnEntityCreated", "PUG.EntityCreated", function( ent )
 	getBadEnt( ent )
 	u.addJob(function()
 		hook.Run( "PUG.isBadEnt", ent, getBadEnt(ent) )
-	end, 0, 1)
-	u.addJob(function()
 		if (ent and ent.PUGSpawning) then
 			ent.PUGSpawning = nil
 		end
-	end, 1, 2)
+	end, 0, 1)
 end)
 
 hook.Add("PUG_PostPhysgunPickup", "main", function( ply, ent, canPickup )
