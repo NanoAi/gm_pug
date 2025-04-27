@@ -22,7 +22,16 @@ function u.safeSetCollisionGroup(ent, group, pObj)
 	if ent.PUGGhosted then return end
 	if pObj then pObj:Sleep() end
 	ent:SetCollisionGroup(group)
+	ent.CollisionGroup = group
 	ent:CollisionRulesChanged()
+end
+
+function u.setCollisionGroup(ent, group, update)
+	ent:SetCollisionGroup(group)
+	ent.CollisionGroup = group
+	if update then
+		ent:CollisionRulesChanged()
+	end
 end
 
 function u.isValidPhys(ent, checkModel)

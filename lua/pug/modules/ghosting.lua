@@ -107,6 +107,7 @@ function PUG:Ghost( ent )
 		ent.PUGGhost.collision = ent.DPP_oldCollision
 	end
 
+	ent.FPPAntiSpamIsGhosted = nil
 	ent.OldCollisionGroup = nil
 	ent.DPP_oldCollision = nil
 	ent.PUGGhosted = 1
@@ -124,15 +125,15 @@ function PUG:Ghost( ent )
 			ent.PUGGhost.colour = ent:GetColor()
 
 			-- Compatibility with other Ghosting
-			if ent.OldColor then
-				ent.PUGGhost.colour = ent.OldColor
+			if ent.FPPOldColor then -- FPP
+				ent.PUGGhost.colour = ent.FPPOldColor
 			end
 
-			if ent.__DPPColor then
+			if ent.__DPPColor then -- DPP
 				ent.PUGGhost.colour = ent.__DPPColor
 			end
 
-			ent.OldColor = nil
+			ent.FPPOldColor = nil
 			ent.__DPPColor = nil
 		end
 
@@ -151,10 +152,10 @@ function PUG:Ghost( ent )
 	ent:DrawShadow( false )
 
 	if _s.ghostNoCollide then
-		ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
+		u.setCollisionGroup(ent, COLLISION_GROUP_WORLD)
 	else
 		if ent.PUGGhost.collision ~= COLLISION_GROUP_WORLD then
-			ent:SetCollisionGroup( COLLISION_GROUP_DEBRIS_TRIGGER )
+			u.setCollisionGroup(ent, COLLISION_GROUP_DEBRIS_TRIGGER)
 		end
 	end
 
@@ -184,50 +185,52 @@ function PUG:UnGhost( ent )
 	local trap = isTrap(ent)
 	local moving = u.entityIsMoving(ent, 9.3)
 
-	if ent.FPPAntiSpamIsGhosted then -- If we have FPP UnGhost with FPP as well.
-		if (FPP and FPP.UnGhost) then
-			FPP.UnGhost(nil, ent) -- Request FPP to UnGhost so we can ghost.
+	if ( trap ) then
+		u.notifyOwner( "pug_istrap", 1, 4, ent )
+		return false
+	end
+
+	if ( moving ) then
+		return false
+	end
+
+	u.entityForceDrop( ent )
+
+	if _s.sleepOnUnGhost then
+		u.sleepEntity( ent )
+	end
+	ent:DrawShadow( true )
+
+	ent:SetRenderMode( ent.PUGGhost.render or RENDERMODE_NORMAL )
+	ent:SetColor( ent.PUGGhost.colour or Color( 255, 255, 255, 255) )
+	ent:SetMaterial( ent.PUGGhost.material or '' )
+
+	local newCollisionGroup = COLLISION_GROUP_INTERACTIVE
+
+	if PUG:isGoodEnt( ent ) then
+		newCollisionGroup = ent.PUGGhost.collision
+	else
+		if ent.PUGGhost.collision == COLLISION_GROUP_WORLD then
+			newCollisionGroup = COLLISION_GROUP_WORLD
+		else
+			if ent.PUGFrozen then
+				newCollisionGroup = COLLISION_GROUP_NONE
+			end
 		end
 	end
 
-	if not ( trap or moving ) then
-		u.entityForceDrop( ent )
+	u.setCollisionGroup(ent, newCollisionGroup, true)
 
-		if _s.sleepOnUnGhost then
-			u.sleepEntity( ent )
-		end
-		ent:DrawShadow( true )
+	ent.PUGGhosted = nil
+	ent.PUGGhost = nil
 
-		ent:SetRenderMode( ent.PUGGhost.render or RENDERMODE_NORMAL )
-		ent:SetColor( ent.PUGGhost.colour or Color( 255, 255, 255, 255) )
-		ent:SetMaterial( ent.PUGGhost.material or '' )
+	return true
+end
 
-		local newCollisionGroup = COLLISION_GROUP_INTERACTIVE
-
-		if PUG:isGoodEnt( ent ) then
-			newCollisionGroup = ent.PUGGhost.collision
-		else
-			if ent.PUGGhost.collision == COLLISION_GROUP_WORLD then
-				newCollisionGroup = COLLISION_GROUP_WORLD
-			else
-				if ent.PUGFrozen then
-					newCollisionGroup = COLLISION_GROUP_NONE
-				end
-			end
-		end
-
-		ent:SetCollisionGroup( newCollisionGroup )
-		ent:CollisionRulesChanged()
-
-		ent.PUGGhosted = nil
-		ent.PUGGhost = nil
-
-		return true
-	else
-		if trap then
-			u.notifyOwner( "pug_istrap", 1, 4, ent )
-		end
-		return false
+if FPP then
+	PUG.FPPGhostFreeze = FPP.AntiSpam.GhostFreeze
+	function FPP.AntiSpam.GhostFreeze(ent, phys)
+		PUG:Ghost(ent) 
 	end
 end
 
