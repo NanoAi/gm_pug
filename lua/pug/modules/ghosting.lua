@@ -124,6 +124,10 @@ function PUG:Ghost( ent )
 	ent.PUGGhost.Memory.FPPCollisionGroup = ent.OldCollisionGroup
 	ent.PUGGhost.Memory.DPPCollisionGroup = ent.DPP_oldCollision
 
+	if ent.FPPAntiSpamIsGhosted and ent.OldCollisionGroup == nil then
+		ent.PUGGhost.Memory.FPPCollisionGroup = COLLISION_GROUP_NONE
+	end
+
 	ent.FPPAntiSpamIsGhosted = nil
 	ent.OldCollisionGroup = nil
 	ent.DPP_oldCollision = nil
