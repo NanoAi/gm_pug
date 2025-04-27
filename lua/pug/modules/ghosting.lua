@@ -12,9 +12,9 @@ local settings = {
 	["GhostOnSetPos"] = true,
 	["GhostOnSpawn"] = true,
 	["GhostHugeOnSpawn"] = false,
-	["HowBigIsHuge"] = 655,
+	["HowBigIsHuge"] = 5.85,
 	["GhostNoCollide"] = false,
-	["GroupOverride"] = true,
+	["GroupOverride"] = false,
 	["TryUnGhostOnSpawn"] = true,
 	["TryUnGhostTimer"] = 5,
 	["SleepOnUnGhost"] = true,
@@ -55,7 +55,7 @@ u.addHook("PUG.EnableMotion", "Collision", function( ent, _, bool )
 		return
 	end
 
-	if bool and ent.PUGBadEnt and not u.isGhostState(ent, 1) then
+	if bool and ent.PUGBadEnt and not ent.PUGGhosted then
 		if ent:GetCollisionGroup( ) ~= COLLISION_GROUP_WORLD then
 			ent:SetCollisionGroup( COLLISION_GROUP_INTERACTIVE_DEBRIS )
 		end
@@ -97,8 +97,18 @@ local function isTrap( ent )
 	return check and true or false
 end
 
+local function ghostCollision(ent)
+	if _s.ghostNoCollide then
+		u.setCollisionGroup(ent, COLLISION_GROUP_WORLD)
+	else
+		if ent.PUGGhost.Collision ~= COLLISION_GROUP_WORLD then
+			u.setCollisionGroup(ent, COLLISION_GROUP_DEBRIS_TRIGGER)
+		end
+	end
+end
+
 function PUG:Ghost( ent )
-	if u.isGhostState(ent, 1) then return end
+	if ent.PUGGhosted then return end
 	if ent.jailWall then return end
 	if not ent.PUGBadEnt then return end
 	if not ent:IsSolid() then return end
@@ -158,11 +168,7 @@ function PUG:Ghost( ent )
 			ent.PUGGhost.Memory.DPPCollisionGroup = nil
 		end
 
-		if not _s.ghostNoCollide then
-			if ent.PUGGhost.Collision ~= COLLISION_GROUP_WORLD then
-				u.setCollisionGroup(ent, COLLISION_GROUP_DEBRIS_TRIGGER, true)
-			end
-		end
+		ghostCollision(ent)
 
 		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
 		ent:SetMaterial("models/debug/debugwhite")
@@ -174,13 +180,7 @@ function PUG:Ghost( ent )
 	ent:SetRenderMode( RENDERMODE_TRANSALPHA )
 	ent:DrawShadow( false )
 
-	if _s.ghostNoCollide then
-		u.setCollisionGroup(ent, COLLISION_GROUP_WORLD)
-	else
-		if ent.PUGGhost.Collision ~= COLLISION_GROUP_WORLD then
-			u.setCollisionGroup(ent, COLLISION_GROUP_DEBRIS_TRIGGER)
-		end
-	end
+	ghostCollision(ent)
 
 	do -- Fix magic surfing
 		local phys = ent:GetPhysicsObject()
@@ -288,31 +288,16 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 end, hooks)
 
 u.addHook("PUG.isBadEnt", "GhostHuge", function( ent, isBadEnt )
-	print('CHECKING IF HUGE: ' .. tostring(_s.ghostHugeOnSpawn))
-
-	print('1')
 	if not _s.ghostHugeOnSpawn then return end
 
-	print("2")
 	if not isBadEnt then return end
 	local valid, phys = u.isValidPhys(ent, false)
-
-	print("3")
 
 	if not valid then return end
 	if not ent:IsSolid() then return end
 	if PUG:isGoodEnt(ent) then return end
 
-	print("4")
-
-	local min, max = phys:GetAABB()
-
-	print("5 | " .. tostring(min:Distance(max)))
-
-	print(tostring(min:Distance(max) >= _s.ghostHugeScale), _s.ghostHugeScale)
-
-	if min:Distance(max) >= _s.ghostHugeScale then
-		print('penis')
+	if phys:GetVolume() and phys:GetVolume() > math.pow(10, _s.ghostHugeScale) then
 		PUG:Ghost( ent )
 	end
 end, hooks, _s.ghostHugeOnSpawn)

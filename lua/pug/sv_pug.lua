@@ -76,14 +76,12 @@ end
 function PUG:addBadEnt( class )
 	local typeResult = type( class )
 	assert( typeResult == "string", "string expected got " .. typeResult )
-	---@diagnostic disable-next-line: assign-type-mismatch
 	badEnts[ class ] = true
 end
 
 function PUG:addGoodEnt( class )
 	local typeResult = type(class)
 	assert( typeResult == "string", "string expected got " .. typeResult )
-	---@diagnostic disable-next-line: assign-type-mismatch
 	goodEnts[ class ] = true
 end
 

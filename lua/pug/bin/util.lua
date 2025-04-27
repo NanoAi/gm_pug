@@ -291,7 +291,7 @@ do
 		}
 	end
 
-	hook.Add("Think", "PUG_JobProcessor", function()
+	hook.Add("Tick", "PUG_JobProcessor", function()
 		local index = #jobs
 		for i = 1, 25 do
 			local job = jobs[index]
