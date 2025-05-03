@@ -39,7 +39,7 @@ end, hooks)
 u.addHook("OnEntityCreated", "physgun", function( ent )
 	if not alwaysFrozen then return end
 
-	u.addJob(function()
+	u.tasks.add(function()
 		if not ent.PUGBadEnt then return end
 		if not IsValid( ent ) then return end
 		if not ent:IsSolid() then return end

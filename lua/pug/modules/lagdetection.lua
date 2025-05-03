@@ -109,7 +109,7 @@ local function cleanup( panic )
 		PUG:Notify( "pug_lagdetected", 3, 5, nil )
 	end
 
-	u.addJob(function()
+	u.tasks.add(function()
 		hook.Run( "PUG.LagDetection.PostCleanup", panic, rate )
 	end, true)
 end

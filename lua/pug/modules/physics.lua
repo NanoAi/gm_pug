@@ -27,7 +27,7 @@ local _s = {
 
 local function applyPlayerHack(ply)
 	if not _s.setPlayerHack then return end
-	u.addJob(function()
+	u.tasks.add(function()
 		local phys = ply:GetPhysicsObject()
 		if IsValid(phys) then
 			phys:EnableMotion(false)
@@ -86,7 +86,7 @@ end, hooks, _s.removeOOB)
 if _s.turboPhysics then
 	memory = physenv.GetPerformanceSettings()
 	RunConsoleCommand("sv_turbophysics", "1")
-	u.addJob(function()
+	u.tasks.add(function()
 		local pe = physenv.GetPerformanceSettings()
 		pe.LookAheadTimeObjectsVsObject = 0.25
 		pe.MaxCollisionChecksPerTimestep = 25000
@@ -98,7 +98,7 @@ if _s.turboPhysics then
 	end, 1, 1)
 else
 	RunConsoleCommand("sv_turbophysics", "0")
-	u.addJob(function()
+	u.tasks.add(function()
 		if (memory and memory.LookAheadTimeObjectsVsObject) then
 			physenv.SetPerformanceSettings(memory)
 			print("[PUG][EXPERIMENTAL] !! Restored Physics Settings. !!")

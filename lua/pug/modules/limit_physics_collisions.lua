@@ -51,9 +51,9 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 					entPhys:SetVelocity( entPhys:GetVelocity() * per )
 					entPhys:AddAngleVelocity( angvel * -1 )
 
-					u.addJob(function()
+					u.tasks.add(function()
 						entPhys:AddAngleVelocity( angvel * per )
-					end)
+					end, 1, 0)
 				end
 			end
 		end
@@ -61,7 +61,7 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 		if obj.collisions > maxCollisions then
 			obj.collisions = 0
 			if speed > 0 then
-				u.addJob(function()
+				u.tasks.add(function()
 					ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 					ent:CollisionRulesChanged()
 				end)
@@ -83,7 +83,7 @@ local function physCollide(ent, data)
 end
 
 u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
-	u.addJob(function()
+	u.tasks.add(function()
 		if not ent.PUGBadEnt then return end
 		if not IsValid( ent ) then return end
 		if not ent:IsSolid() then return end

@@ -1,8 +1,11 @@
 local hook = hook
 local istable = istable
+local isfunction = isfunction
+local pcall = pcall
 local cppiOwner = false
 local IsValid = IsValid
 local IsValidModel = util.IsValidModel
+local setmetatable = setmetatable
 local type = type
 local u = {}
 
@@ -273,45 +276,86 @@ function u.tableReduce(func, tbl)
 end
 
 do
-	local jobs = {}
+	local _t = {
+		size = 0,
+		rn = {}, -- List of functions added.
+		i = 25, -- The number of iterations.
+	}
 
-	local function jobProcess(index, job, try)
-		jobs[index].retry = try
-		jobs[index] = job
+	do -- Prepare Tables
+		_t.rn.__index = _t.rn
+		_t.rn = setmetatable( { [ 0 ] = 0 }, _t.rn )
 	end
 
-	function u.addJob(callback, runAfterTicks, retry)
-		assert(type(callback) == "function", "The callback must be a function!")
-		local index = #jobs + 1
-		jobs[index] = {
-			call = callback,
-			runAfterTicks = runAfterTicks or 0,
-			retry = retry or 1,
-			response = false,
+	u.tasks = {} -- Prepare Function Container.
+	
+	function u.tasks.print()
+		PrintTable(_t)
+	end
+
+	function u.tasks.add(fn, skips, rerun)
+		assert(isfunction(fn), "Argument #1 must be a function.")
+		_t.size = _t.rn[0]
+		_t.size = _t.size + 1
+		_t.rn[_t.size] = {
+			fn = fn,
+			skips = skips or 0,
+			rerun = rerun or 0,
 		}
+		_t.rn[0] = _t.size
 	end
 
-	hook.Add("Tick", "PUG_JobProcessor", function()
-		local index = #jobs
-		for i = 1, 25 do
-			local job = jobs[index]
-			if job and not job.response then
-				local try = job.retry - 1
+	function u.tasks.next(entry)
+		_t.rn[0] = _t.rn[0] + 1
+		_t.rn[_t.rn[0]] = entry
+	end
 
-				if job.runAfterTicks <= 0 then
-					job.response = job.call()
-					if job.response or try <= 0 then
-						job = nil
+	function u.tasks:run(key)
+		local count = 0
+		local task = _t.rn[key]
+		if task and not isnumber(task) then
+			if task.skips == 0 then
+				local ok, out = pcall(_t.rn[key].fn)
+				if ok then
+					if task.rerun > 0 and out ~= true then 
+						_t.rn[key].rerun = task.rerun - 1
+					else
+						_t.rn[key] = nil
+						count = count + 1
 					end
 				else
-					job.runAfterTicks = job.runAfterTicks - 1
+					ErrorNoHaltWithStack(out)
 				end
-
-				jobProcess(index, job, try)
-				index = index - i
+			else
+				_t.rn[key].skips = task.skips - 1
 			end
 		end
-	end)
+		_t.rn[0] = _t.rn[0] - count
+		_t.rn[0] = (_t.rn[0] < 0) and 0 or _t.rn[0]
+	end
+
+	function u.tasks:process(iters)
+		for key, _ in next, _t.rn do
+			if iters < 0 then break end
+			if key ~= 0 then
+				self:run(key)
+				iters = iters - 1
+			end
+		end
+	end
+
+	function u.tasks.unhook()
+		hook.Remove("Tick", "PUG_TaskProcessor")
+	end
+
+	function u.tasks.hook()
+		hook.Remove("Tick", "PUG_TaskProcessor")
+		hook.Add("Tick", "PUG_TaskProcessor", function()
+			u.tasks:process(_t.i)
+		end)
+	end
+
+	u.tasks.hook()
 end
 
 return u

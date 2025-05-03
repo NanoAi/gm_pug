@@ -1,6 +1,7 @@
+PUG.util = include("pug/bin/util.lua")
+
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local hook, timer = hook, timer
-PUG.util = include("pug/bin/util.lua")
 local u = PUG.util
 
 -- TODO: Make badEnts & goodEnts use a Database.
@@ -110,7 +111,6 @@ do
 	PUG._SetCollisionGroup = PUG._SetCollisionGroup or ENT.SetCollisionGroup
 	PUG._SetModelScale = PUG._SetModelScale or ENT.SetModelScale
 	PUG._SetColor = PUG._SetColor or ENT.SetColor
-	PUG._SetPos = PUG._SetPos or ENT.SetPos
 
 	function ENT:SetCollisionGroup( group )
 		local getHook = hook.Run( "PUG.SetCollisionGroup", self, group )
@@ -153,15 +153,6 @@ do
 		end
 	end
 
-	function ENT:SetPos( pos )
-		PUG._SetPos( self, pos )
-		timer.Simple(0, function()
-			if not self.PUGSpawning then
-				hook.Run( "PUG.PostSetPos", self, pos )
-			end
-		end)
-	end
-
 	--NOTE: Fix engine crash resulting from entities being resized.
 	--REF: https://github.com/Facepunch/garrysmod-issues/issues/3547
 
@@ -179,6 +170,7 @@ end
 do
 	local PhysObj = FindMetaTable( "PhysObj" )
 	PUG._EnableMotion = PUG._EnableMotion or PhysObj.EnableMotion
+	PUG._SetPos = PUG._SetPos or PhysObj.SetPos
 
 	function PhysObj:EnableMotion( bool )
 		local ent = self:GetEntity()
@@ -189,6 +181,13 @@ do
 		ent.PUGFrozen = (not bool)
 
 		return PUG._EnableMotion( self, bool )
+	end
+
+	function PhysObj:SetPos( pos )
+		PUG._SetPos( self, pos )
+		timer.Simple(0.01, function()
+			hook.Run( "PUG.PostSetPos", self, pos )
+		end)
 	end
 end
 
@@ -205,13 +204,9 @@ local function getBadEnt( ent )
 end
 
 hook.Add("OnEntityCreated", "PUG.EntityCreated", function( ent )
-	ent.PUGSpawning = true
 	getBadEnt( ent )
-	u.addJob(function()
+	u.tasks.add(function()
 		hook.Run( "PUG.isBadEnt", ent, getBadEnt(ent) )
-		if (ent and ent.PUGSpawning) then
-			ent.PUGSpawning = nil
-		end
 	end, 0, 1)
 end)
 

@@ -104,7 +104,7 @@ u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool
 	if not canTool then return end
 	if not toolFreezes then return end
 
-	u.addJob(function()
+	u.tasks.add(function()
 		local ent = tr.Entity
 		local phys = NULL
 
@@ -129,7 +129,7 @@ u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)
 		ent._PUGForceCollision = enum
 	end
 
-	u.addJob(function()
+	u.tasks.add(function()
 		if IsValid(ent) then
 			if not ent.isFadingDoor then return end
 			local state = ent.fadeActive

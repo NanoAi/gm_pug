@@ -194,7 +194,7 @@ function PUG:Ghost( ent )
 			phys:EnableCollisions( false )
 			phys:EnableMotion( false )
 
-			u.addJob(function()
+			u.tasks.add(function()
 				if IsValid(phys) then
 					phys:EnableCollisions( true )
 					phys:EnableMotion( hasMotion )
@@ -254,9 +254,13 @@ function PUG:UnGhost( ent )
 	return true
 end
 
-u.addHook("PUG.PostSetPos", "Ghosting", function( ent )
+u.addHook("PUG.PostSetPos", "Ghosting", function( phys )
 	if not _s.ghostSetPos then return end
-	u.addJob(function()
+	u.tasks.add(function()
+		if not phys then return end
+		if not IsValid(phys) then return end
+
+		local ent = phys:GetEntity()
 		if IsValid( ent ) and ent.PUGBadEnt then
 			PUG:Ghost( ent )
 		end
@@ -264,7 +268,7 @@ u.addHook("PUG.PostSetPos", "Ghosting", function( ent )
 end, hooks)
 
 u.addHook("PUG.PostPhysgunPickup", "Ghosting", function(_, ent, canPickup)
-	u.addJob(function()
+	u.tasks.add(function()
 		if not canPickup then return end
 		if IsValid( ent ) then
 			PUG:Ghost( ent )
@@ -279,7 +283,7 @@ end, hooks)
 
 u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 	timer.Simple(_s.tryUnGhostTimer, function()
-		u.addJob(function()
+		u.tasks.add(function()
 			if not IsValid(ent) then return end
 			if u.isEntityHeld( ent ) then return end
 			PUG:UnGhost( ent )
@@ -309,7 +313,7 @@ end, hooks, _s.ghostHugeOnSpawn)
 u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 	if not _s.ghostOnSpawn then return end
 
-	u.addJob(function()
+	u.tasks.add(function()
 		if not isBadEnt then return end
 		if not IsValid( ent ) then return end
 		if not ent:IsSolid() then return end
@@ -357,7 +361,7 @@ u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
 		if type( ply ) ~= "Player" then return end
 
 		if not isFading then
-			u.addJob(function()
+			u.tasks.add(function()
 				if IsValid( ply ) and IsValid( ent ) and isTrap( ent ) then
 					PUG:Notify( "pug_doorghost", 1, 5, ply )
 					ent.PUGGhost = ent.PUGGhost or {}
