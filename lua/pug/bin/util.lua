@@ -227,7 +227,6 @@ function u.addHook(callID, id, callback, store, removeCondition)
 	local index = #store + 1
 	id = "PUG." .. id
 
-	--[[
 	if (removeCondition) then
 		if isbool(removeCondition) and removeCondition then
 			u.remHook(callID, id, store)
@@ -238,16 +237,18 @@ function u.addHook(callID, id, callback, store, removeCondition)
 			return store, index - 1
 		end
 	end
-	--]]
 
 	hook.Add(callID, id, callback)
 	store[index] = store[index] or {}
-	store[index][callID] = id
+	store[index][callID] = {
+		id = id,
+		cond = removeCondition,
+	}
 
 	return store, index
 end
 
-function u.addTimer(timerID, delay, reps, callback, store)
+function u.addTimer(timerID, delay, reps, callback, store, cond)
 	assert(istable(store) == true, "A storage table must be passed!")
 
 	local index = #store + 1
@@ -255,7 +256,11 @@ function u.addTimer(timerID, delay, reps, callback, store)
 
 	timer.Create(timerID, delay, reps, callback)
 	store[index] = store[index] or {}
-	store[index][timerID] = delay
+	store[index][timerID] = {
+		id = timerID,
+		delay = delay,
+		cond = cond,
+	}
 
 	return store
 end

@@ -33,15 +33,15 @@ function PUG:unLoad( moduleName )
 		local data = module.data
 
 		for _, getTable in next, data.hooks do
-			for callerID, hookID in next, getTable do
-				hook.Remove(callerID, hookID)
+			for callerID, hookData in next, getTable do
+				hook.Remove(callerID, hookData.id)
 			end
 		end
 
 		if type( data.timers ) == "table" then
 			for _, getTable in next, data.timers do
-				for timerID in next, getTable do
-					timer.Remove( timerID )
+				for timerData in next, getTable do
+					timer.Remove( timerData.id )
 				end
 			end
 		end

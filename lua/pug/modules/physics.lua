@@ -9,7 +9,6 @@ local settings = {
 	["AllowGravityGun"] = false,
 	["SleepOnDamage"] = false,
 	["TurboPhysics"] = false,
-	["RemoveOOB"] = false,
 	["DamageControl"] = true,
 }
 
@@ -22,7 +21,6 @@ local _s = {
 	sleepOnDamage = settings["SleepOnDamage"],
 	setPlayerHack = settings["ApplyPlayerHack"],
 	turboPhysics = settings["TurboPhysics"],
-	removeOOB = settings["RemoveOOB"],
 }
 
 local function applyPlayerHack(ply)
@@ -45,43 +43,6 @@ for _, ply in next, player.GetAll() do
 		applyPlayerHack(ply)
 	end
 end
-
-u.addHook("Think", "RemoveOOB", function()
-	if (not _s.removeOOB) then return end
-	local iter = 0
-	for _, ent in ents.Iterator() do
-		if (iter > 3) then break end
-		repeat
-			if (ent and ent.PUGBadEnt) then
-				if (not ent.PUG_OOB) then
-					ent.PUG_OOB = true
-					do break end -- Continue to the next iteration.
-				else
-					ent.PUG_OOB = nil
-					iter = iter + 1
-				end
-			else
-				do break end
-			end
-
-			local valid, phys = u.isValidPhys(ent, false)
-			if (valid and phys) then
-				local pos = phys:GetPos()
-				if (pos and isvector(pos)) then
-					if (util.IsInWorld(pos)) then
-						ent.PUG_LastInWorld = pos
-					else
-						local _pos = ent.PUG_LastInWorld
-						if (_pos and isvector(_pos) and _pos:DistToSqr(pos) > 30) then
-							print("[PUG][OOB] Removing Entity[" .. ent:EntIndex() .. "][" .. ent:GetClass() .. "].")
-							SafeRemoveEntity(ent)
-						end
-					end
-				end
-			end
-		until true
-	end
-end, hooks, _s.removeOOB)
 
 if _s.turboPhysics then
 	memory = physenv.GetPerformanceSettings()
