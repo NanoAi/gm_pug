@@ -1,29 +1,17 @@
 local u = PUG.util
 
 local hooks = {}
-local settings = {
-	["AddFadingDoorHooks"] = true,
-	["BlockToolUseOnWorld"] = true,
-	["BlockToolSpam"] = true,
-	["BlockObjSpam"] = true,
-	["ToolFreezes"] = false,
-	["SpamToolDelay"] = 1,
-	["SpamToolRate"] = 7,
-	["SpamObjDelay"] = 1,
-	["SpamObjRate"] = 8,
-}
-
-settings = u.getSettings( settings )
-
-local addFadingDoorHooks 	= settings[ "AddFadingDoorHooks" ]
-local blockToolWorld 		= settings[ "BlockToolUseOnWorld" ]
-local blockToolSpam 		= settings[ "BlockToolSpam" ]
-local blockObjSpam 			= settings[ "BlockObjSpam" ]
-local toolFreezes 			= settings[ "ToolFreezes" ]
-local toolDelay 			= settings[ "SpamToolDelay" ]
-local toolRate 				= settings[ "SpamToolRate" ]
-local objDelay 				= settings[ "SpamObjDelay" ]
-local objRate 				= settings[ "SpamObjRate" ]
+local _s = u.settings.set({
+	addFadingDoorHooks = true,
+	blockToolWorld = true,
+	blockToolSpam = true,
+	blockObjSpam = true,
+	toolFreezes = false,
+	toolDelay = 1,
+	toolRate = 7,
+	objDelay = 1,
+	objRate = 8,
+})
 
 local function usage( data, delay, rate )
 	local diff = 0
@@ -48,8 +36,8 @@ local function usage( data, delay, rate )
 	else
 		data.useTimes = data.useTimes + 1
 
-		if data.useTimes >= toolRate then
-			data.useTimes = toolRate
+		if data.useTimes >= _s.toolRate then
+			data.useTimes = _s.toolRate
 			data.delay = data.curTime + delay
 			return data, true
 		end
@@ -64,10 +52,10 @@ end
 
 u.addHook("PUG.PostCanTool", "ToolSpamControl", function( ply, _, _, canTool )
 	if not canTool then return end
-	if not blockToolSpam then return end
+	if not _s.blockToolSpam then return end
 
 	ply.PUG_toolCTRL = ply.PUG_toolCTRL or {}
-	local data, shouldBlock = usage( ply.PUG_toolCTRL, toolDelay, toolRate )
+	local data, shouldBlock = usage( ply.PUG_toolCTRL, _s.toolDelay, _s.toolRate )
 
 	if shouldBlock then
 		if not data.wasNotified then
@@ -79,10 +67,10 @@ u.addHook("PUG.PostCanTool", "ToolSpamControl", function( ply, _, _, canTool )
 end, hooks)
 
 u.addHook("PlayerSpawnObject", "ObjectSpamControl", function( ply )
-	if not blockObjSpam then return end
+	if not _s.blockObjSpam then return end
 
 	ply.PUG_objSpawnCTRL = ply.PUG_objSpawnCTRL or {}
-	local data, shouldBlock = usage( ply.PUG_objSpawnCTRL, objDelay, objRate )
+	local data, shouldBlock = usage( ply.PUG_objSpawnCTRL, _s.objDelay, _s.objRate )
 
 	if shouldBlock then
 		if not data.wasNotified then
@@ -94,7 +82,7 @@ u.addHook("PlayerSpawnObject", "ObjectSpamControl", function( ply )
 end, hooks)
 
 u.addHook("CanTool", "ToolWorldControl", function(ply, tr)
-	if blockToolWorld and tr.HitWorld then
+	if _s.blockToolWorld and tr.HitWorld then
 		PUG:Notify( "pug_toolworld", 1, 5, ply )
 		return false
 	end
@@ -102,7 +90,7 @@ end, hooks)
 
 u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool)
 	if not canTool then return end
-	if not toolFreezes then return end
+	if not _s.toolFreezes then return end
 
 	u.tasks.add(function()
 		local ent = tr.Entity
@@ -119,7 +107,7 @@ u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool
 end, hooks)
 
 u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)
-	if not addFadingDoorHooks then return end
+	if not _s.addFadingDoorHooks then return end
 
 	local ent = tr.Entity
 	local enum = COLLISION_GROUP_INTERACTIVE_DEBRIS
@@ -165,7 +153,4 @@ u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)
 	end)
 end, hooks)
 
-return {
-	hooks = hooks,
-	settings = settings,
-}
+return u.settings.release(hooks, _s)

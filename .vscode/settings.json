@@ -11,5 +11,13 @@
       "format": "svg"
     }
   ],
-  "indentRainbow.includedLanguages": ["lua", "glua"]
+  "indentRainbow.includedLanguages": [
+    "lua",
+    "glua"
+  ],
+  "cSpell.words": [
+    "Ents",
+    "gmod",
+    "Physgun"
+  ]
 }

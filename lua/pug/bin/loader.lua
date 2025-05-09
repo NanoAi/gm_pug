@@ -2,20 +2,28 @@ PUG.modules = PUG.modules or {}
 
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local file, hook, timer = file, hook, timer
-local path = "pug/modules/"
-local modules = file.Find( path .. "*.lua", "LUA" )
+local path = "pug/modules"
+local modules = file.Find( path .. "/*.lua", "LUA" )
 
-for _, fileName in next, modules do
-	if fileName then
-		local niceName = string.gsub(fileName, "%.lua", "")
-		PUG.modules[ niceName ] = {
-			enabled = false,
-			loaded = false,
-			path = path .. fileName,
-			data = {}
-		}
+-- Detect and Prepare Modules on Run.
+local function prepare(path, modules, drop)
+	local container = {}
+	for _, fileName in next, modules do
+		if fileName then
+			local niceName = string.gsub(fileName, "%.lua", "")
+			container[ niceName ] = {
+				enabled = false,
+				loaded = false,
+				path = string.format( "%s/%s", path, fileName),
+				data = {},
+				key = niceName,
+			}
+		end
 	end
+	return container
 end
+
+PUG.modules = prepare(path, modules, false)
 
 function PUG:load( moduleName )
 	local module = self.modules[ moduleName ]
@@ -70,12 +78,13 @@ local function writeData( modules )
 		end
 	end
 
+	modules[0] = nil
 	json = util.TableToJSON( data )
-	file.Write( "pug_settings.txt", json )
+	file.Write( "pug_settings.json", json )
 end
 
 function PUG:saveConfig( data )
-	local readFile = file.Read( "pug_settings.txt", "DATA" )
+	local readFile = file.Read( "pug_settings.json", "DATA" )
 
 	if ( not readFile ) or ( readFile == "" ) then
 		writeData( self.modules )
@@ -97,6 +106,7 @@ function PUG:saveConfig( data )
 		-- Look for saved data that does not actually exist and remove it.
 		-- k is Key, v is Value, _ is Dropped/Unused.
 
+		data[0] = nil -- Clear the [0] table of the data.
 		for k, _ in next, data do
 			if not self.modules[ k ] then
 				data[ k ] = nil

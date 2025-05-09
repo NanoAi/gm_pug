@@ -1,43 +1,36 @@
 local u = PUG.util
 
 local hooks = {}
-local settings = {
-	["AlwaysFrozen"] = false,
-	["NoThrowing"] = false,
-	["NoPhysgunReload"] = false,
-	["NoVehiclePickup"] = false,
-}
-
-settings = u.getSettings( settings )
-
-local alwaysFrozen 		= settings[ "AlwaysFrozen" ]
-local noThrowing 		= settings[ "NoThrowing" ]
-local noPhysgunReload 	= settings[ "NoPhysgunReload" ]
-local noVehiclePickup 	= settings[ "NoVehiclePickup" ]
+local _s = u.settings.set({
+	alwaysFrozen = false,
+	noThrowing = false,
+	noPhysgunReload = false,
+	noVehiclePickup = false
+})
 
 u.addHook("PhysgunDrop", "physgun", function( _, ent )
-	if noThrowing then
+	if _s.noThrowing then
 		u.sleepEntity( ent, true )
 	end
-	if alwaysFrozen then
+	if _s.alwaysFrozen then
 		u.freezeEntity( ent )
 	end
 end, hooks)
 
 u.addHook("CanPlayerUnfreeze", "physgun", function( _, _, phys )
-	if alwaysFrozen then
+	if _s.alwaysFrozen then
 		return false
 	end
 end, hooks)
 
 u.addHook("PhysgunPickup", "physgun", function( _, ent )
-	if noVehiclePickup and ( IsValid( ent ) and u.isVehicle( ent ) ) then
+	if _s.noVehiclePickup and ( IsValid( ent ) and u.isVehicle( ent ) ) then
 		return false
 	end
 end, hooks)
 
 u.addHook("OnEntityCreated", "physgun", function( ent )
-	if not alwaysFrozen then return end
+	if not _s.alwaysFrozen then return end
 
 	u.tasks.add(function()
 		if not ent.PUGBadEnt then return end
@@ -56,12 +49,9 @@ u.addHook("OnEntityCreated", "physgun", function( ent )
 end, hooks)
 
 u.addHook("OnPhysgunReload", "physgun", function()
-	if alwaysFrozen or noPhysgunReload then
+	if _s.alwaysFrozen or _s.noPhysgunReload then
 		return false
 	end
 end, hooks)
 
-return {
-	hooks = hooks,
-	settings = settings,
-}
+return u.settings.release(hooks, _s)

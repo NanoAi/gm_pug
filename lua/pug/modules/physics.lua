@@ -4,24 +4,14 @@ local isvector = isvector
 local u = PUG.util
 local hooks = {}
 
-local settings = {
-	["ApplyPlayerHack"] = true,
-	["AllowGravityGun"] = false,
-	["SleepOnDamage"] = false,
-	["TurboPhysics"] = false,
-	["DamageControl"] = true,
-}
-
-settings = u.getSettings(settings)
-
 local memory = {}
-local _s = {
-	allowGravGun = settings["AllowGravityGun"],
-	damageControl = settings["DamageControl"],
-	sleepOnDamage = settings["SleepOnDamage"],
-	setPlayerHack = settings["ApplyPlayerHack"],
-	turboPhysics = settings["TurboPhysics"],
-}
+local _s = u.settings.set({
+	allowGravGun = true,
+	damageControl = true,
+	sleepOnDamage = false,
+	setPlayerHack = false,
+	turboPhysics = false,
+})
 
 local function applyPlayerHack(ply)
 	if not _s.setPlayerHack then return end
@@ -100,7 +90,4 @@ u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 	end
 end, hooks)
 
-return {
-	hooks = hooks,
-	settings = settings,
-}
+return u.settings.release(hooks, _s)

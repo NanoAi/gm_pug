@@ -9,14 +9,21 @@ local setmetatable = setmetatable
 local type = type
 local u = {}
 
+dirs = {
+	modules = "pug/modules",
+}
+
 do
 	local ENT = FindMetaTable("Entity")
 	cppiOwner = ENT.CPPIGetOwner
 end
 
-function u.isGhostState(ent, ghostState)
+function u.isGhostState(ent, ghostState, gt)
 	if not ent.PUGGhosted then return false end
 	if type(ent.PUGGhosted) ~= "number" then return false end
+	if gt == true then
+		return (ent.PUGGhosted > ghostState)
+	end
 	return (ent.PUGGhosted == ghostState)
 end
 
@@ -193,55 +200,144 @@ function u.removeEntityHolder(ent, ply)
 	ent.PUGHolding[steamID] = nil
 end
 
-function u.getSettings(defaults)
-	local module = PUG.currentModule or {}
+function u.returnIfValid(validator, input)
+	if validator(input) then
+		return input
+	end
+	return nil
+end
 
-	if not module.data then
-		module = defaults
-	else
-		module = table.Merge(defaults, module.data.settings or {})
+do
+	local _s = {}
+	function _s.isModuleValid(module)
+		if not module then return false end
+		if module.data == nil then return false end
+		if module.path == nil then return false end
+		if module.key == nil then return false end
+		return true
 	end
 
-	return module, module == defaults
+	function _s.set(defaults)
+		local cm = u.returnIfValid(_s.isModuleValid, PUG.currentModule)
+		local module = (cm and cm.data.settings) or {}
+		assert(defaults ~= nil, "Default data values must be passed.")
+
+		if not cm.data then
+			module = defaults
+		else
+			module = table.Merge(defaults, module)
+		end
+
+		local hasFolders = false
+		local binding = {}
+		for k, v in next, module do
+			if v and istable(v) and v[0] == "folder" then
+				hasFolders = true
+				for kk, vv in next, v do
+					if kk ~= 0 then
+						binding[k] = {}
+						binding[k][kk] = vv.v
+					end
+				end
+			end
+		end
+
+		if hasFolders then
+			module = _s.bind(binding, module)
+		end
+
+		return module
+	end
+
+	function _s.bind(bindTo, bindFrom)
+		bindTo[0] = bindFrom
+		return setmetatable(bindTo, {__index = bindTo[0]})
+	end
+
+	function _s.release(hooks, settings)
+		if settings[0] then
+			settings = settings[0]
+			settings[0] = nil
+		end
+		return {
+			hooks = hooks,
+			settings = settings,
+		}
+	end
+
+	function _s.merge(settings, hooks, path)
+		local cm = u.returnIfValid(_s.isModuleValid, PUG.currentModule)
+		settings = settings or {}
+
+		local path = string.format("%s/%s/%s", dirs.modules, cm.key, path)
+		local data = include(path)
+		table.Merge(settings, data.settings)
+		table.Merge(hooks, data.hooks)
+		path = nil
+		data = nil
+
+		return settings
+	end
+
+	function _s.folder(settings, inherit)
+		settings[0] = "folder"
+		for k, v in next, settings do
+			if k ~= 0 then
+				settings[k] = { v = v, inherit = (inherit == k) }
+			end
+		end
+		return settings
+	end
+
+	u.settings = _s
 end
 
 function u.remHook(callID, id, store)
 	assert(istable(store) == true, "A storage table must be passed!")
 	id = "PUG." .. id
 
+	print("[PUG][HOOKS] Removing " .. id .. " @ " .. callID)
+	hook.Remove(callID, id)
+
+	-- Cleanup data store.
 	for index, getTable in next, store do
 		for cid, hid in next, getTable do
 			if (cid == callID and hid == id) then
-				print("[PUG][HOOKS] Removing " .. hookID .. " @ " .. callID)
-				hook.Remove(callID, hookID)
 				store[index][callID] = nil
 				break
 			end
 		end
 	end
+
+	return store, #store
 end
 
 function u.addHook(callID, id, callback, store, removeCondition)
 	assert(istable(store) == true, "A storage table must be passed!")
 
+	local halt = false
 	local index = #store + 1
-	id = "PUG." .. id
+	local hid = "PUG." .. id
 
 	if (removeCondition) then
 		if isbool(removeCondition) and removeCondition then
-			u.remHook(callID, id, store)
-			return store, index - 1
+			halt = true
 		end
 		if isfunction(removeCondition) and removeCondition() then
-			u.remHook(callID, id, store)
-			return store, index - 1
+			halt = true
 		end
 	end
 
-	hook.Add(callID, id, callback)
+	if halt then
+		index = index - 1
+		u.remHook(callID, id, store)
+		return store, index
+	end
+
+	hook.Add(callID, hid, callback)
 	store[index] = store[index] or {}
 	store[index][callID] = {
-		id = id,
+		id = hid,
 		cond = removeCondition,
 	}
 

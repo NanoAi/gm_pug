@@ -1,17 +1,11 @@
 local u = PUG.util
 
 local hooks = {}
-local settings = {
-	["MaxObjectCollisions"] = 23,
-	["VelocityDamping"] = 0,
-	["Cooldown"] = 3,
-}
-
-settings = u.getSettings( settings )
-
-local maxCollisions = settings[ "MaxObjectCollisions" ]
-local velocityDamp = settings[ "VelocityDamping" ]
-local cooldown = settings[ "Cooldown" ]
+local _s = u.settings.set({
+	maxCollisions = 23,
+	velocityDamp = 0,
+	cooldown = 3,
+})
 
 u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 	local hit = data.HitObject
@@ -35,17 +29,17 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 
 		obj.collisions = ( obj.collisions or 0 ) + 1
 
-		obj.collisionTime = obj.collisionTime or ( CurTime() + cooldown )
+		obj.collisionTime = obj.collisionTime or ( CurTime() + _s.cooldown )
 		obj.lastCollision = CurTime()
 
-		if obj.collisions > ( maxCollisions * 0.75 ) then
+		if obj.collisions > ( _s.maxCollisions * 0.75 ) then
 			speed = select( 2, u.physIsMoving( entPhys, 0 ) )
 
-			if velocityDamp > 0 then
+			if _s.velocityDamp > 0 then
 				if speed < 3 then
 					entPhys:Sleep()
 				else
-					local per = ( velocityDamp / 100 )
+					local per = ( _s.velocityDamp / 100 )
 					local angvel = entPhys:GetAngleVelocity()
 
 					entPhys:SetVelocity( entPhys:GetVelocity() * per )
@@ -58,7 +52,7 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 			end
 		end
 
-		if obj.collisions > maxCollisions then
+		if obj.collisions > _s.maxCollisions then
 			obj.collisions = 0
 			if speed > 0 then
 				u.tasks.add(function()
@@ -73,7 +67,7 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 
 		if obj.collisionTime < obj.lastCollision then
 			obj.collisions = 1
-			obj.collisionTime = ( CurTime() + cooldown )
+			obj.collisionTime = ( CurTime() + _s.cooldown )
 		end
 	end
 end, hooks)
@@ -91,7 +85,4 @@ u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
 	end)
 end, hooks)
 
-return {
-	hooks = hooks,
-	settings = settings,
-}
+return u.settings.release(hooks, _s)

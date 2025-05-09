@@ -27,7 +27,7 @@ hook.Add( "PlayerSay", "PUG.openMenu", function( ply, text, public )
 end)
 
 local function log( msg )
-	ServerLog( msg )
+	ServerLog( msg .. "\n" )
 	if epoe and type( epoe.PushMsgC ) == "function" then
 		epoe.PushMsgC( Color(255,255,255), "[PUG] " .. msg .. "\n" )
 	end
@@ -48,7 +48,7 @@ net.Receive("pug.send", function( len, ply )
 		antiFlood[ ply:SteamID() ] = CurTime() + 1
 		if len > 0 then return end
 
-		local readFile = file.Read( "pug_settings.txt", "DATA" )
+		local readFile = file.Read( "pug_settings.json", "DATA" )
 		if readFile and readFile ~= "" then
 			local data = util.Compress( readFile )
 			net.Start("pug.send")

@@ -86,7 +86,8 @@ function PUG:addGoodEnt( class )
 	goodEnts[ class ] = true
 end
 
-do
+repeat
+	if PUG.hasLoaded then break end -- Clever way to discard the following if PUG was already loaded.
 	local GM = GM or GAMEMODE
 
 	PUG._PhysgunPickup = PUG._PhysgunPickup or GM.PhysgunPickup
@@ -103,9 +104,10 @@ do
 		hook.Run( "PUG.PostCanTool", ply, trace, mode, canTool )
 		return canTool
 	end
-end
+until true
 
-do
+repeat
+	if PUG.hasLoaded then break end
 	local ENT = FindMetaTable("Entity")
 
 	PUG._SetCollisionGroup = PUG._SetCollisionGroup or ENT.SetCollisionGroup
@@ -165,9 +167,10 @@ do
 			FixInvalidPhysicsObject( self )
 		end
 	end
-end
+until true
 
-do
+repeat
+	if PUG.hasLoaded then break end
 	local PhysObj = FindMetaTable( "PhysObj" )
 	PUG._EnableMotion = PUG._EnableMotion or PhysObj.EnableMotion
 	PUG._SetPos = PUG._SetPos or PhysObj.SetPos
@@ -189,7 +192,7 @@ do
 			hook.Run( "PUG.PostSetPos", self, pos )
 		end)
 	end
-end
+until true
 
 local function getBadEnt( ent )
 	if PUG:isBadEnt( ent ) then
