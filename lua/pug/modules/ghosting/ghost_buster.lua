@@ -26,7 +26,4 @@ u.addHook("Think", "GhostBuster", function()
 	end
 end, hooks, (not _s.buster.enabled))
 
-PrintTable(_s)
-
-PrintTable(u.settings.release(hooks, _s))
 return u.settings.release(hooks, _s)

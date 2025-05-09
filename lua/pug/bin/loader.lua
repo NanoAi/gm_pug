@@ -4,6 +4,12 @@ local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local file, hook, timer = file, hook, timer
 local path = "pug/modules"
 local modules = file.Find( path .. "/*.lua", "LUA" )
+local clientFiles = file.Find( "pug/client/*.lua", "LUA" )
+
+for _, v in next, clientFiles do
+	AddCSLuaFile("lua/pug/client/" .. v)
+end
+clientFiles = nil
 
 -- Detect and Prepare Modules on Run.
 local function prepare(path, modules, drop)

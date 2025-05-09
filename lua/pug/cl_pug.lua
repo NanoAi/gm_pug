@@ -1,7 +1,9 @@
 local type = type
 local istable = istable
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
+local langGetPhrase = language.GetPhrase
 local lang = include("pug/client/language.lua")
+local RNDX = include("pug/client/rndx.lua")
 
 local frame = {}
 local dtree = {}
@@ -13,6 +15,14 @@ local typeBuilder = {
 		TextEntry = false,
 	}
 }
+
+local function l( str )
+	local re = langGetPhrase( "PUG.V." .. str )
+	if string.sub(re, 1, 6) == "PUG.V." then
+		return str
+	end
+	return re
+end
 
 local function netRequestSettings()
 	net.Start("pug.send")
@@ -194,10 +204,6 @@ local function showSettings( data, len )
 			node.value = v
 
 			function node:DoClick()
-				print("Right click to toggle.")
-			end
-
-			function node:DoRightClick()
 				local enabled = rData[ self.key ].enabled
 				enabled = ( not enabled )
 
@@ -208,6 +214,10 @@ local function showSettings( data, len )
 				end
 
 				rData[ self.key ].enabled = enabled
+			end
+
+			function node:DoRightClick()
+				-- Send data to right hand panel.
 			end
 
 			if v.enabled then
@@ -226,7 +236,7 @@ local function showSettings( data, len )
 					if istable(vv) and vv[0] == "folder" then
 						local folder = kk
 
-						option = node:AddNode(folder)
+						option = node:AddNode(l(folder))
 						option:DockPadding( 0, 0, 10, 0 )
 						option.type = vv[0]
 						option.isFolderLike = true
@@ -240,14 +250,14 @@ local function showSettings( data, len )
 								setOptionData(folders[folder][0], path, data.v)
 							else
 								local folderNode = folders[folder][opt]
-								folderNode = folders[folder][0]:AddNode(opt)
+								folderNode = folders[folder][0]:AddNode(l(opt))
 								folderNode = setOptionData(folderNode, path, data.v)
 								option = folderNode
 								addNodeOption(node, option)
 							end
 						end
 					else
-						option = node:AddNode( kk )
+						option = node:AddNode( l(kk) )
 						option:DockPadding( 0, 0, 10, 0 )
 						option = setOptionData(option, kk, vv)
 						addNodeOption(node, option)
@@ -271,10 +281,13 @@ local function init()
 
 	frame:SetDeleteOnClose( false )
 
-	local dBackground = vgui.Create("DImage", frame)
-	dBackground:SetPos(0, 25)
+	local dBackground = vgui.Create("DPanel", frame)
+	dBackground:SetPos(0, 24)
 	dBackground:SetSize(1024, 1024)
-	dBackground:SetImage("materials/pug/scanlines.png")
+	dBackground:SetPaintBackground(true)
+	function dBackground:Paint(w, h)
+		RNDX.Draw(0, 0, 0, w, h, nil, RNDX.BLUR)
+	end
 
 	dtree = vgui.Create( "DTree", frame )
 	dtree:SetSize( 300, 500 )
@@ -326,7 +339,7 @@ hook.Add("InitPostEntity", "PUG.reee", init)
 net.Receive("pug.menu", function()
 	if not frame.IsVisible then
 		frame = init()
-		ErrorNoHaltWithStack('Frame Not Found Recreating.')
+		print('[PUG:Warn] Frame Not Found Recreating.')
 	end
 	if not frame:IsVisible() then
 		frame:Show()
@@ -355,7 +368,7 @@ net.Receive("pug.notify", function()
 	end
 
 	local str, type, length = net.ReadString(), net.ReadInt(4), net.ReadInt(4)
-	str = language.GetPhrase( str ) or str
+	str = l( str ) or str
 
 	notification.AddLegacy( str, type, length )
 	print( "NOTIFY: ", str )
