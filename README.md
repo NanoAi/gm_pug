@@ -2,7 +2,7 @@
 > A modular solution to prop griefing and physics exploits!
 
 <div align="center">
-<img src="https://github.com/NanoAi/gm_pug/blob/dev/assets/gm_pug.png?raw=true" alt="gm_pug logo" width="256px"/>
+<img src="https://github.com/NanoAi/gm_pug/blob/dev/materials/pug/x256.png?raw=true" alt="gm_pug logo" width="256px"/>
 <hr/><br/>
 <img src="https://i.imgur.com/gvcznDV.png" alt="Menu Preview"/>
 <br/><br/>
