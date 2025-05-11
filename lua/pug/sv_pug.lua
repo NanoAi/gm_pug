@@ -87,11 +87,12 @@ function PUG:addGoodEnt( class )
 end
 
 repeat
-	if PUG.hasLoaded then break end -- Clever way to discard the following if PUG was already loaded.
 	local GM = GM or GAMEMODE
 
 	PUG._PhysgunPickup = PUG._PhysgunPickup or GM.PhysgunPickup
 	PUG._CanTool = PUG._CanTool or GM.CanTool
+
+	if PUG.hasLoaded then break end -- Clever way to discard the following if PUG was already loaded.
 
 	function GM:PhysgunPickup( ply, ent )
 		local canPickup = PUG._PhysgunPickup(self, ply, ent)
@@ -107,12 +108,13 @@ repeat
 until true
 
 repeat
-	if PUG.hasLoaded then break end
 	local ENT = FindMetaTable("Entity")
 
 	PUG._SetCollisionGroup = PUG._SetCollisionGroup or ENT.SetCollisionGroup
 	PUG._SetModelScale = PUG._SetModelScale or ENT.SetModelScale
 	PUG._SetColor = PUG._SetColor or ENT.SetColor
+
+	if PUG.hasLoaded then break end
 
 	function ENT:SetCollisionGroup( group )
 		local getHook = hook.Run( "PUG.SetCollisionGroup", self, group )
@@ -170,10 +172,11 @@ repeat
 until true
 
 repeat
-	if PUG.hasLoaded then break end
 	local PhysObj = FindMetaTable( "PhysObj" )
 	PUG._EnableMotion = PUG._EnableMotion or PhysObj.EnableMotion
 	PUG._SetPos = PUG._SetPos or PhysObj.SetPos
+
+	if PUG.hasLoaded then break end
 
 	function PhysObj:EnableMotion( bool )
 		local ent = self:GetEntity()

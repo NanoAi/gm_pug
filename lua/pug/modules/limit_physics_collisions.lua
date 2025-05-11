@@ -1,4 +1,5 @@
 local u = PUG.util
+local zero = Vector(0,0,0)
 
 local hooks = {}
 local _s = u.settings.set({
@@ -20,7 +21,7 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 
 		if not entPhys:IsMotionEnabled() then return end
 		if not entPhys:IsCollisionEnabled() then return end
-		if not entPhys:IsPenetrating() then return end
+		-- if not entPhys:IsPenetrating() then return end
 
 		ent["PUG_TrackPhysics"] = ent["PUG_TrackPhysics"] or {}
 
@@ -72,9 +73,30 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 	end
 end, hooks)
 
-local function physCollide(ent, data)
-	hook.Run( "PUG.EntityPhysicsCollide", ent, data )
+local entitySet = {}
+entitySet.__index = entitySet
+entitySet = setmetatable( { [ 0 ] = 0 }, entitySet )
+
+local function push(ent, data)
+	entitySet[0] = entitySet[0] + 1
+	entitySet[entitySet[0]] = {ent = ent, data = data}
 end
+
+local function physCollide(ent, data)
+	push(ent, data)
+end
+
+u.addHook("Think", "CollisionProcessor", function()
+	local iters = 1000
+	for k, v in next, entitySet do
+		if iters < 0 then break end
+		if k ~= 0 then
+			hook.Run( "PUG.EntityPhysicsCollide", v.ent, v.data )
+			entitySet[k] = nil
+			iters = iters - 1
+		end
+	end
+end, hooks)
 
 u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
 	u.tasks.add(function()
