@@ -3,6 +3,7 @@ local zero = Vector(0,0,0)
 
 local hooks = {}
 local _s = u.settings.set({
+	enableHook = true,
 	maxCollisions = 23,
 	velocityDamp = 0,
 	cooldown = 3,
@@ -71,7 +72,7 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 			obj.collisionTime = ( CurTime() + _s.cooldown )
 		end
 	end
-end, hooks)
+end, hooks, (not _s.enableHook))
 
 local entitySet = {}
 entitySet.__index = entitySet
@@ -83,7 +84,9 @@ local function push(ent, data)
 end
 
 local function physCollide(ent, data)
-	push(ent, data)
+	if _s.enableHook then
+		push(ent, data)
+	end
 end
 
 u.addHook("Think", "CollisionProcessor", function()
@@ -96,7 +99,7 @@ u.addHook("Think", "CollisionProcessor", function()
 			iters = iters - 1
 		end
 	end
-end, hooks)
+end, hooks, (not _s.enableHook))
 
 u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
 	u.tasks.add(function()
@@ -105,6 +108,6 @@ u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
 		if not ent:IsSolid() then return end
 		ent.PUG_CollisionCallbackHook = ent:AddCallback( "PhysicsCollide", physCollide )
 	end)
-end, hooks)
+end, hooks, (not _s.enableHook))
 
 return u.settings.release(hooks, _s)
