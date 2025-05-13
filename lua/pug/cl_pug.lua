@@ -1,190 +1,21 @@
-local type = type
 local istable = istable
-local ErrorNoHaltWithStack = ErrorNoHaltWithStack
-local langGetPhrase = language.GetPhrase
+local matCache = {
+	screen = Material( "materials/pug/terminal.png", "noclamp smooth" ),
+	upload = Material( "pug/icons/send.png", "noclamp smooth" ),
+	download = Material( "pug/icons/request.png", "noclamp smooth" ),
+}
+
 local lang = include("pug/client/language.lua")
 local RNDX = include("pug/client/rndx.lua")
+local PGM = include("pug/client/menu_struct.lua")
+local l = PGM.l
 
+local strEmpty = ""
 local frame = {}
 local dtree = {}
 local readFile = ""
-local rData = {}
 
-local typeBuilder = {
-	_i = {
-		TextEntry = false,
-	}
-}
-
-local function l( str )
-	local re = langGetPhrase( "PUG.V." .. str )
-	if string.sub(re, 1, 6) == "PUG.V." then
-		return str
-	end
-	return re
-end
-
-local function netRequestSettings()
-	net.Start("pug.send")
-	net.SendToServer()
-end
-
-local function setDataValue(node, path, value)
-	local keys = {}
-	for key in string.gmatch(path, "([^/]+)") do
-		table.insert(keys, key)
-	end
-
-	if #keys == 0 then
-		keys[1] = path
-	end
-	
-	local c = #keys 
-	local v = rData[ node.key ].data.settings[ keys[1] ]
-
-	if c > 1 and istable(v) then
-		if c == 3 then
-			v[keys[2]][keys[3]].v = value
-		elseif c == 2 then
-			v[keys[2]].v = value
-		end
-		rData[ node.key ].data.settings[ keys[1] ] = v
-	else
-		v = value
-	end
-
-	rData[ node.key ].data.settings[ keys[1] ] = v
-end
-
-local function getDataValue(node, path)
-	local keys = {}
-	for key in string.gmatch(path, "([^/]+)") do
-		table.insert(keys, key)
-	end
-
-	if #keys == 0 then
-		keys[1] = path
-	end
-	
-	local c = #keys 
-	local v = rData[ node.key ].data.settings[ keys[1] ]
-
-	if c > 1 and istable(v) then
-		if c == 3 then
-			return v[keys[2]][keys[3]].v
-		elseif c == 2 then
-			return v[keys[2]].v
-		end
-		rData[ node.key ].data.settings[ keys[1] ] = v
-	else
-		return v
-	end
-end
-
-typeBuilder = {
-	["boolean"] = function(node, option)
-		if option.value then
-			option.Icon:SetImage( "icon16/accept.png" )
-		else
-			option.Icon:SetImage( "icon16/delete.png" )
-		end
-
-		function option:DoClick()
-			local enabled = getDataValue(node, self.path)
-			enabled = ( not enabled )
-
-			if enabled then
-				self.Icon:SetImage( "icon16/accept.png" )
-			else
-				self.Icon:SetImage( "icon16/delete.png" )
-			end
-
-			setDataValue(node, self.path, enabled)
-		end
-		return true
-	end,
-	["folder"] = function(node, option)
-		option.Icon:SetImage("icon16/folder.png")
-		return true
-	end,
-	["textfield"] = {
-		[0] = function(node, option)
-			option.Icon:SetImage( "icon16/textfield_rename.png" )
-
-			if type( option.value ) == "table" then
-				option.value = table.concat( option.value, ", " )
-			end
-
-			local TextEntry = vgui.Create( "DTextEntry", option )
-			TextEntry:Dock( RIGHT )
-			TextEntry:SetText( tostring( option.value ) )
-			TextEntry:SetWide( 100 )
-
-			function TextEntry:OnChange()
-				option.Icon:SetImage( "icon16/textfield_rename.png" )
-			end
-			
-			function TextEntry:SaveEntry(entry)
-				option.Icon:SetImage( "icon16/disk.png" )
-				setDataValue(node, option.path, entry)
-			end
-
-			typeBuilder._TextEntry = TextEntry
-
-			local entry = getDataValue(node, option.path)
-			typeBuilder["textfield"][option.type](entry)
-		end,
-		["table"] = function(entry)
-			local i = typeBuilder._TextEntry
-			function i:OnEnter()
-				local new = {}
-				self:GetValue():gsub('[0-9]+', function(n)
-					table.insert( new, tonumber( n ) )
-				end)
-				entry = new
-				self:SaveEntry(entry)
-			end
-		end,
-		["number"] = function(entry)
-			local i = typeBuilder._TextEntry
-			function i:OnEnter()
-				self:GetValue():gsub('[0-9]+', function(n)
-					entry = tonumber( n )
-				end)
-				self:SaveEntry(entry)
-			end
-		end,
-		["string"] = function(entry)
-			function i:OnEnter()
-				entry = self:GetValue()
-				self:SaveEntry(entry)
-			end
-		end,
-	},
-}
-
-setmetatable(typeBuilder, {
-	__index = function(data, key)
-		return (function() return false end)
-	end,
-})
-
-local function setOptionData(option, path, value)
-	option.path = path
-	option.value = value
-	option.type = type( value )
-	return option
-end
-
-local function addNodeOption(node, option)
-	if option ~= nil then
-		if not typeBuilder[option.type](node, option) then
-			typeBuilder["textfield"][0](node, option)
-		end
-	else
-		ErrorNoHaltWithStack("Attempt to index local 'option' (a nil value).")
-	end
-end
+PGM.RNDX = RNDX
 
 local function showSettings( data, len )
 	dtree:Clear()
@@ -192,19 +23,17 @@ local function showSettings( data, len )
 	readFile = util.Decompress( data, len )
 
 	if readFile and readFile ~= "" then
-		rData = util.JSONToTable( readFile )
+		PGM.rawData = util.JSONToTable( readFile )
+		if not istable( PGM.rawData ) then return end
 
-		-- If `rData` is not a table do not continue.
-		if not istable( rData ) then return end
-
-		for k, v in next, rData do
+		for k, v in next, PGM.rawData do
 			local node = dtree:AddNode( k )
 
 			node.key = k
 			node.value = v
 
 			function node:DoClick()
-				local enabled = rData[ self.key ].enabled
+				local enabled = PGM.rawData[ self.key ].enabled
 				enabled = ( not enabled )
 
 				if enabled then
@@ -213,11 +42,12 @@ local function showSettings( data, len )
 					self.Icon:SetImage( "icon16/delete.png" )
 				end
 
-				rData[ self.key ].enabled = enabled
+				PGM.rawData[ self.key ].enabled = enabled
 			end
 
 			function node:DoRightClick()
-				-- Send data to right hand panel.
+				local line = string.format("%s - %s", l(self.key), l(self.key, true))
+				frame.console:Push(line)
 			end
 
 			if v.enabled then
@@ -246,21 +76,21 @@ local function showSettings( data, len )
 						for opt, data in next, vv do
 							local path = string.format("%s/%s", folder, opt)
 							if data.inherit then
-								typeBuilder["boolean"](node, folders[folder][0])
-								setOptionData(folders[folder][0], path, data.v)
+								PGM.typeBuilder["boolean"](node, folders[folder][0])
+								PGM.setOptionData(folders[folder][0], path, data.v)
 							else
 								local folderNode = folders[folder][opt]
 								folderNode = folders[folder][0]:AddNode(l(opt))
-								folderNode = setOptionData(folderNode, path, data.v)
+								folderNode = PGM.setOptionData(folderNode, path, data.v)
 								option = folderNode
-								addNodeOption(node, option)
+								PGM.addNodeOption(node, option)
 							end
 						end
 					else
 						option = node:AddNode( l(kk) )
 						option:DockPadding( 0, 0, 10, 0 )
-						option = setOptionData(option, kk, vv)
-						addNodeOption(node, option)
+						option = PGM.setOptionData(option, kk, vv)
+						PGM.addNodeOption(node, option)
 					end
 					-- END
 				end
@@ -271,7 +101,7 @@ end
 
 
 local function init()
-	rData = {}
+	PGM.rawData = {}
 
 	frame = vgui.Create( "DFrame" )
 	frame:SetTitle( "[PUG][SETTINGS] ~ 0a05cc1" )
@@ -279,57 +109,171 @@ local function init()
 	frame:Center()
 	frame:Hide()
 
+	function frame:Paint(w, h)		
+		-- draw.RoundedBox( 8, 0, 0, self:GetWide(), self:GetTall(), Color( 0, 0, 0, 150 ) )
+		-- RNDX.Draw(r, x, y, w, h, col, flags)
+
+		self.flags = RNDX.SHAPE_IOS
+		local w, h = self:GetWide(), self:GetTall()
+    RNDX.Draw(8, 0, 0, w, h, nil, self.flags + RNDX.BLUR)
+    RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 150), self.flags)
+
+		surface.SetFont( "GModToolName" )
+		surface.SetTextColor(227, 218, 201, 255)
+		surface.SetTextPos( 128, h - 125 ) 
+		surface.DrawText( "P.U.G" )
+
+		frame.cmdr:RequestFocus()
+	end
+
 	frame:SetDeleteOnClose( false )
 
-	local dBackground = vgui.Create("DPanel", frame)
-	dBackground:SetPos(0, 24)
-	dBackground:SetSize(1024, 1024)
-	dBackground:SetPaintBackground(true)
-	function dBackground:Paint(w, h)
-		RNDX.Draw(0, 0, 0, w, h, nil, RNDX.BLUR)
+	local cmd = vgui.Create("DPanel", frame)
+	cmd:SetPaintBackground( false )
+	cmd:SetSize( 800, 50 )
+	cmd:Dock( BOTTOM )
+
+	local content = vgui.Create("DPanel", frame)
+	content:SetSize( 490, 500 )
+	content:Dock( RIGHT )
+	content:SetPaintBackground(true)
+	function content:Paint(w, h)
+		surface.SetMaterial( matCache.screen )
+		surface.SetDrawColor( Color(255, 255, 255, 150) )
+		surface.DrawTexturedRect( 0, 0, w, h )
 	end
+	frame.content = content
 
 	dtree = vgui.Create( "DTree", frame )
 	dtree:SetSize( 300, 500 )
 	dtree:Dock( LEFT )
+	dtree:DockMargin( 0, 0, 0, 75 )
 
-	local sendData = ""
+	local cmdr = vgui.Create( "DTextEntry", cmd )
+	cmdr:Dock( FILL )
+	cmdr:DockMargin( 120, 5, 0, 0 )
+	cmdr:RequestFocus()
 
-	local request = vgui.Create( "DButton", frame )
-	request:SetText( "Request Data" )
-	request:Dock( BOTTOM )
-	function request:DoClick()
-		net.Start("pug.send")
-		net.SendToServer()
+	function cmdr:SetCommand( str )
+		self:SetText(str)
+		self:OnValueChange(str)
+		self:SetCaretPos(#str)
 	end
 
-	local send = vgui.Create( "DButton", frame )
-	send:SetText( "Send Data" )
-	send:Dock( BOTTOM )
+	local i = 0
+	local pastCommands = {}
+	function cmdr:OnKeyCodeTyped( key )
+		local str = self:GetValue()
 
-	function send:DoClick()
-		if readFile and ( istable(rData) and next( rData ) ) then
-			sendData = util.TableToJSON( rData )
+		if key == KEY_BACKQUOTE then
+			str = string.gsub(str, "`", strEmpty)
+			timer.Simple(0, function()
+				if self and self.SetCommand then
+					self:SetCommand(str)
+				end
+			end)
+			return true
+		end
 
-			if sendData and sendData ~= "" then
-				sendData = util.Compress( sendData )
-
-				net.Start("pug.take")
-				net.WriteData( sendData, #sendData )
-				net.SendToServer()
-
-				sendData = ""
+		if key == KEY_DOWN then
+			i=i+1; if i > #pastCommands then i = 1 end
+			if pastCommands[i] then
+				self:SetCommand( pastCommands[i] )
 			end
+			return true
+		elseif key == KEY_UP then
+			i=i-1; if i > #pastCommands or i <= 0 then i = #pastCommands end
+			if pastCommands[i] then
+				self:SetCommand( pastCommands[i] )
+			end
+			return true
+		elseif key == KEY_ENTER then
+			if not table.HasValue(pastCommands, string.Left(str, 1000)) then
+				if #pastCommands <= 50 then
+					table.insert(pastCommands, string.Left(str, 1000))
+				else
+					table.Empty(pastCommands)
+				end
+			end
+
+			if self:GetText() ~= "clear" then
+				frame.console:Push("] " .. self:GetText())
+				frame.console:Push("Unknown Command.")
+			else
+				frame.console:SetText(strEmpty)
+			end
+
+			self:SetText(strEmpty)
+			self:OnValueChange(strEmpty)
+			self:RequestFocus()
+
+			return true
 		end
 	end
+	frame.cmdr = cmdr
 
-	local dImg = vgui.Create("DImage", frame)
-	dImg:SetPos(544 + 30, 244 - 10)
-	dImg:SetSize(256, 256)
-	dImg:SetImage("materials/pug/x256.png")
+	local sendData = ""
+	local buttonColours = {
+		base = Color(55, 55, 55, 255),
+		click = Color(70, 70, 70, 255),
+		image = Color(255, 255, 255, 255),
+		imageClick = Color(125, 125, 125, 255),
+	}
+
+	local request = vgui.Create( "DButton", cmd )
+	request:SetText( strEmpty )
+	request:SetTooltip("Request Data")
+	request:SetSize(75, 25)
+	request:Dock( RIGHT )
+	request:DockMargin( 0, 0, 5, 0 )
+	PGM.setupButton(request, matCache.download, buttonColours, frame.flags)
+
+	function request:DoClick()
+		self:Clicked()
+		PGM.netRequestSettings()
+	end
+
+	local send = vgui.Create( "DButton", cmd )
+	send:SetText( strEmpty )
+	send:SetTooltip("Send Data")
+	send:SetSize(75, 25)
+	send:Dock( RIGHT )
+	PGM.setupButton(send, matCache.upload, buttonColours, frame.flags)
+
+	function send:DoClick()
+		self:Clicked()
+		PGM.netSendSettings()
+	end
+
+	local term = vgui.Create( "RichText", content )
+	term.length = 0
+	term.content = {}
+	term:SetPaintBackgroundEnabled(false)
+	term:Dock(FILL)
+	term:InsertColorChange(255, 255, 255, 255)
+	function term:Push( line, colour )
+		line = line .. "\n"
+		term.length = term.length + #line
+
+		if colour then
+			term:InsertColorChange(colour.r, colour.g, colour.b, colour.a)
+		end
+
+		term:AppendText(line)
+		term:GotoTextEnd()
+	end
+	function term:PerformLayout()
+		self:SetFontInternal("Trebuchet18")
+	end
+	frame.console = term
+
+	local pugImg = vgui.Create("DImage", frame)
+	pugImg:SetPos(5, 500 - 128)
+	pugImg:SetSize(128, 128)
+	pugImg:SetImage("materials/pug/x256.png")
 
 	-- Send a request for data to the server.
-	netRequestSettings()
+	PGM.netRequestSettings()
 
 	return frame
 end
@@ -346,7 +290,7 @@ net.Receive("pug.menu", function()
 		frame:MakePopup()
 		dtree:Clear()
 		timer.Simple(0.3, function()
-			netRequestSettings()
+			PGM.netRequestSettings()
 		end)
 	end
 end)
@@ -378,6 +322,6 @@ end)
 
 concommand.Add("pug_reload_menu", init, nil, "Reload the menu for PUG.")
 concommand.Add("pug_data_dump", function()
-	print(rData)
-	PrintTable(rData)
+	print(PGM.rawData)
+	PrintTable(PGM.rawData)
 end, nil, "Dump the currently loaded data set for PUG.")

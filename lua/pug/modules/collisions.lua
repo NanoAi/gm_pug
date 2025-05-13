@@ -22,6 +22,8 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 
 		if not entPhys:IsMotionEnabled() then return end
 		if not entPhys:IsCollisionEnabled() then return end
+
+		-- Entities can be colliding but not penetrating.
 		-- if not entPhys:IsPenetrating() then return end
 
 		ent["PUG_TrackPhysics"] = ent["PUG_TrackPhysics"] or {}
@@ -89,6 +91,7 @@ local function physCollide(ent, data)
 	end
 end
 
+-- Only process 1000 collisions per tick to reduce server impact.
 u.addHook("Think", "CollisionProcessor", function()
 	local iters = 1000
 	for k, v in next, entitySet do

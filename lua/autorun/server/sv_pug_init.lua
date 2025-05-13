@@ -1,4 +1,7 @@
 AddCSLuaFile("pug/cl_pug.lua")
+AddCSLuaFile("pug/client/rndx.lua")
+AddCSLuaFile("pug/client/language.lua")
+AddCSLuaFile("pug/client/menu_struct.lua")
 
 PUG = {}
 
