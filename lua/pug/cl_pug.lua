@@ -10,10 +10,15 @@ local RNDX = include("pug/client/rndx.lua")
 local PGM = include("pug/client/menu_struct.lua")
 local l = PGM.l
 
+local readFile = ""
 local strEmpty = ""
+local function funcEmpty() end
+
 local frame = {}
 local dtree = {}
-local readFile = ""
+
+local simData = {}
+local frameData = {}
 
 PGM.RNDX = RNDX
 
@@ -104,26 +109,78 @@ local function init()
 	PGM.rawData = {}
 
 	frame = vgui.Create( "DFrame" )
-	frame:SetTitle( "[PUG][SETTINGS] ~ 0a05cc1" )
+	frame:SetTitle( "Physics \"UnGriefer\" Settings" )
 	frame:SetSize( 800, 500 )
 	frame:Center()
 	frame:Hide()
 
-	function frame:Paint(w, h)		
+	frame.isReady = false
+
+	function frame:PerformLayout(w, h)
+		self.flags = RNDX.SHAPE_IOS
+		self.width = w
+		self.height = h
+
+		function self.btnClose:Paint(w, h)
+			RNDX.DrawCircle(w/2, (h/2) + 3, h * 0.75, Color(186, 29, 60, 250))
+		end
+
+		self.btnMaxim:Remove()
+		self.btnMinim:Remove()
+	end
+
+	function frame:OnClose()
+		net.Start("pug.menu.close")
+		net.SendToServer()
+	end
+
+	function frame:Paint(w, h)
 		-- draw.RoundedBox( 8, 0, 0, self:GetWide(), self:GetTall(), Color( 0, 0, 0, 150 ) )
 		-- RNDX.Draw(r, x, y, w, h, col, flags)
 
-		self.flags = RNDX.SHAPE_IOS
 		local w, h = self:GetWide(), self:GetTall()
     RNDX.Draw(8, 0, 0, w, h, nil, self.flags + RNDX.BLUR)
     RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 150), self.flags)
 
-		surface.SetFont( "GModToolName" )
-		surface.SetTextColor(227, 218, 201, 255)
-		surface.SetTextPos( 128, h - 125 ) 
-		surface.DrawText( "P.U.G" )
+		-- surface.SetFont( "GModToolName" )
+		-- surface.SetTextColor(227, 218, 201, 255)
+		-- surface.SetTextPos( 128, h - 125 ) 
+		-- surface.DrawText( "P.U.G" )
 
-		frame.cmdr:RequestFocus()
+		if frame.cmdr then
+			frame.cmdr:RequestFocus()
+		end
+	end
+
+	local p = vgui.Create( "DPanel", frame )
+	p.key = 0
+
+	function p:PerformLayout()
+		p:SetPos(128, frame.height - 125)
+		p:SetSize(175, 70)
+	end
+
+	function p:Paint(w, h)
+		p.key = (p.key % 175) + 1
+		local len = #simData
+		local o = h - 10
+
+		frameData[p.key] = math.min(math.floor(engine.ServerFrameTime() * 1000), o)
+		RNDX.Draw(8, 0, 0, w, h, Color(43, 38, 38, 150), frame.flags)
+
+		if simData and len > 1 then
+			for i = 1, len - 1 do
+				local n = i + 1
+				if frameData and frameData[n] then
+					surface.SetDrawColor( 0, 255, 255, 255 )
+					surface.DrawLine(i - 1, o - frameData[i], i, o - frameData[n])
+				end
+				local yFrom = math.min((o - simData[i]), o)
+				local yTo = math.min((o - simData[n]), o)
+				surface.SetDrawColor( 255, 0, 0, 200 )
+				surface.DrawLine(i - 1, yFrom, i, yTo)
+			end
+		end
 	end
 
 	frame:SetDeleteOnClose( false )
@@ -145,14 +202,44 @@ local function init()
 	frame.content = content
 
 	dtree = vgui.Create( "DTree", frame )
+	dtree._AddNode = dtree.AddNode
+
 	dtree:SetSize( 300, 500 )
 	dtree:Dock( LEFT )
 	dtree:DockMargin( 0, 0, 0, 75 )
+	function dtree:Paint(w, h)
+		RNDX.Draw(8, 0, 0, w, h, Color(255, 255, 255, 100))
+	end
+
+	function dtree:AddNode(name, icon)
+		local node = self:_AddNode(name, icon)
+		if node.Label then
+			node.Label:SetTextColor( Color(255, 255, 255, 255) )
+			node._AddNode = node.AddNode
+			node.AddNode = self.AddNode
+			node:SetPaintBackgroundEnabled( true )
+			function node:Paint(w, h)
+				surface.SetDrawColor(Color(0, 0, 0, 120))
+				surface.DrawRect(0, 0, w, h)
+			end
+		end
+		return node
+	end
+
 
 	local cmdr = vgui.Create( "DTextEntry", cmd )
 	cmdr:Dock( FILL )
 	cmdr:DockMargin( 120, 5, 0, 0 )
 	cmdr:RequestFocus()
+
+	function cmdr:Paint(w, h)
+		RNDX.Draw(8, 0, 0, w - 5, h, Color(50, 50, 50, 150), frame.flags)
+		self:DrawTextEntryText(Color(255, 255, 255), Color(186, 29, 60), Color(255, 255, 255))
+	end
+
+	function cmdr:PerformLayout()
+		self:SetFontInternal("Trebuchet18")
+	end
 
 	function cmdr:SetCommand( str )
 		self:SetText(str)
@@ -214,18 +301,20 @@ local function init()
 
 	local sendData = ""
 	local buttonColours = {
-		base = Color(55, 55, 55, 255),
-		click = Color(70, 70, 70, 255),
+		base = Color(60, 60, 60, 255),
+		click = Color(80, 80, 80, 255),
 		image = Color(255, 255, 255, 255),
 		imageClick = Color(125, 125, 125, 255),
 	}
 
+	local noTopCorners = RNDX.NO_TL + RNDX.NO_TR
 	local request = vgui.Create( "DButton", cmd )
 	request:SetText( strEmpty )
 	request:SetTooltip("Request Data")
-	request:SetSize(75, 25)
+	request:SetSize(75, 27)
 	request:Dock( RIGHT )
 	request:DockMargin( 0, 0, 5, 0 )
+
 	PGM.setupButton(request, matCache.download, buttonColours, frame.flags)
 
 	function request:DoClick()
@@ -319,6 +408,14 @@ net.Receive("pug.notify", function()
 
 	notifyDelay = CurTime() + (length * 0.45)
 end)
+
+do
+	local k = 0
+	net.Receive("pug.PhysicsPing", function( len )
+		k = (k % 175) + 1
+		simData[k] = net.ReadUInt(7)
+	end)
+end
 
 concommand.Add("pug_reload_menu", init, nil, "Reload the menu for PUG.")
 concommand.Add("pug_data_dump", function()

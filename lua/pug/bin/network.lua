@@ -1,15 +1,30 @@
 util.AddNetworkString( "pug.menu" )
+util.AddNetworkString( "pug.menu.close" )
 util.AddNetworkString( "pug.send" )
 util.AddNetworkString( "pug.take" )
 util.AddNetworkString( "pug.notify" )
+util.AddNetworkString( "pug.PhysicsPing" )
+
+local playersInMenu = {}
+local sendTime = RealTime() + (FrameTime() * 2)
+local antiFlood = {}
+local size = 0
 
 local function openMenu( ply )
 	net.Start("pug.menu")
 	net.Send( ply )
+	for k = 1, #playersInMenu + 1 do
+		if playersInMenu[k] == nil then
+			playersInMenu[k] = ply
+			break
+		end
+	end
 end
 
-local antiFlood = {}
-local size = 0
+local function timeInTicks(ticks)
+	ticks = ticks or 1
+	return FrameTime() * ticks
+end
 
 concommand.Add("pug", function( ply, cmd )
 	if cmd ~= "pug" then return end
@@ -23,6 +38,26 @@ hook.Add( "PlayerSay", "PUG.openMenu", function( ply, text, public )
 	if ply:IsSuperAdmin() and text:match( '^%ppug' ) then
 		openMenu( ply )
 		return ""
+	end
+end)
+
+local physLag = { [0] = 0 }
+hook.Add( "Think", "PUG.PhysicsPing", function()
+	local rt = RealTime()
+	if rt > sendTime then
+		local users = {}
+		local t = math.min(math.ceil(physenv.GetLastSimulationTime() * 1000), 127)
+		sendTime = rt + timeInTicks(2)
+
+		for _, v in ipairs(playersInMenu) do
+			if v:IsSuperAdmin() then
+				users[#users + 1] = v
+			end
+		end
+
+		net.Start("pug.PhysicsPing")
+		net.WriteUInt(t, 7)
+		net.Send( users )
 	end
 end)
 
@@ -123,6 +158,21 @@ net.Receive("pug.take", function( len, ply )
 
 			PUG:Notify( msg, 0, 4, "supers" )
 			PUG:saveConfig( data )
+		end
+	end
+end)
+
+net.Receive("pug.menu.close", function( len, ply )
+	if not IsValid(ply) then return end
+
+	if not ply:IsAdmin() or not ply:IsSuperAdmin() then
+		ply:Kick()
+		return
+	end
+
+	for k, v in ipairs(playersInMenu) do
+		if v == ply then
+			playersInMenu[k] = nil
 		end
 	end
 end)

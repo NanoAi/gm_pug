@@ -46,10 +46,10 @@ function pgm.setupButton(button, src, colours, flags)
 			offset = 3
 		end
 
-		RNDX.Draw(8, 0, 0, w, h, colours.base, flags)
+		RNDX.Draw(8, 0, 4, w - 5, h - 4, colours.base, flags)
 		surface.SetMaterial( src )
 		surface.SetDrawColor( colours.image )
-		surface.DrawTexturedRect( w/4, h/8 + offset, w/2, h * 0.75 )
+		surface.DrawTexturedRect( w/4, h/4.75 + offset, w/2, h * 0.75 )
 	end
 
 	function button:Clicked()
