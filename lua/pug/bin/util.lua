@@ -7,6 +7,7 @@ local IsValid = IsValid
 local IsValidModel = util.IsValidModel
 local setmetatable = setmetatable
 local type = type
+local vecZero = Vector(0, 0, 0)
 local u = {}
 
 dirs = {
@@ -18,6 +19,21 @@ do
 	cppiOwner = ENT.CPPIGetOwner
 end
 
+local function isTableLike(tableLike)
+	if not tableLike then return false end
+	
+	local isNot = {
+		table = (not istable(tableLike)),
+		entity = (not isentity(tableLike)),
+		panel = (not ispanel(tableLike)),
+	}
+	
+	if isNot.table or isNot.entity or isNot.panel then
+		return false
+	end
+	return true
+end
+
 function u.isGhostState(ent, ghostState, gt)
 	if not ent.PUGGhosted then return false end
 	if type(ent.PUGGhosted) ~= "number" then return false end
@@ -25,6 +41,28 @@ function u.isGhostState(ent, ghostState, gt)
 		return (ent.PUGGhosted > ghostState)
 	end
 	return (ent.PUGGhosted == ghostState)
+end
+
+function u.pugSetVar(tableLike, key, value)
+	if not tableLike then return end
+	tableLike.PUGData = tableLike.PUGData or {}
+	tableLike.PUGData[key] = value
+	return tableLike
+end
+
+function u.pugGetVar(tableLike, key, fallback)
+	if not isTableLike(tableLike) then
+		error("Expected a table-like value as argument #1.")
+		return
+	end
+
+	tableLike.PUGData = tableLike.PUGData or {}
+
+	local value = tableLike.PUGData[key]
+	if value == nil then
+		return fallback
+	end
+	return value
 end
 
 function u.safeSetCollisionGroup(ent, group, pObj)
@@ -66,6 +104,16 @@ function u.isValidPhys(ent, checkModel)
 	return IsValid(phys), phys, model
 end
 
+-- Same as isValidPhys but returns a table instead.
+function u.getValidPhys(ent, checkModel)
+	local valid, phys, model = u.isValidPhys(ent, checkModel)
+	return {
+		valid = valid,
+		phys = phys,
+		model = model,
+	}
+end
+
 function u.isVehicle(ent, basic)
 	if not IsValid(ent) then return false end
 
@@ -88,13 +136,14 @@ function u.callOnConstraints(ent, callback)
 end
 
 function u.getCPPIOwner(ent)
-	if type(cppiOwner) == "function" then
-		local owner = cppiOwner(ent)
-		if type(cppiOwner(ent)) ~= "Player" then
-			return false
-		else
-			return owner
-		end
+	if type(cppiOwner) ~= "function" then
+		return
+	end
+	local owner = cppiOwner(ent)
+	if type(cppiOwner(ent)) ~= "Player" then
+		return false
+	else
+		return owner
 	end
 end
 
@@ -109,12 +158,11 @@ function u.entityForceDrop(ent)
 	if istable(ent.PUGHolding) then
 		for _, ply in next, ent.PUGHolding do
 			if ply and IsValid(ply) then
+				ply.PUGBlockAttack = CurTime() + (FrameTime() * 2)
 				ply:ConCommand("-attack")
+				ply:DropObject()
 			end
 		end
-	end
-	if DropEntityIfHeld then
-		DropEntityIfHeld(ent)
 	end
 	ent:ForcePlayerDrop()
 end
@@ -123,11 +171,9 @@ function u.entityIsMoving(ent, speed)
 	if type(ent) ~= "Entity" then return end
 	if not IsValid(ent) then return end
 
-	local zero = Vector(0, 0, 0)
-	local phys = ent:GetPhysicsObject()
-
-	if IsValid(phys) then
-		local vel = phys:GetVelocity():Distance(zero)
+	local p = u.getValidPhys(ent, false)
+	if p.valid then
+		local vel = p.phys:GetVelocity():Distance(vecZero)
 		return (vel > speed), vel
 	else
 		return false, nil
@@ -138,10 +184,8 @@ function u.physIsMoving(phys, speed)
 	if type(phys) ~= "PhysObj" then return end
 	if not IsValid(phys) then return end
 
-	local zero = Vector(0, 0, 0)
-
 	if IsValid(phys) then
-		local vel = phys:GetVelocity():Distance(zero)
+		local vel = phys:GetVelocity():Distance(vecZero)
 		return (vel > speed), vel
 	else
 		return false, nil
@@ -152,14 +196,12 @@ function u.sleepEntity(ent, dontSleep)
 	if type(ent) ~= "Entity" then return end
 	if not IsValid(ent) then return end
 
-	local zero = Vector(0, 0, 0)
-	local phys = ent:GetPhysicsObject()
-
-	if IsValid(phys) then
-		phys:SetVelocityInstantaneous(zero)
-		phys:AddAngleVelocity(phys:GetAngleVelocity() * -1)
+	local p = u.getValidPhys(ent, false)
+	if p.valid then
+		p.phys:SetVelocityInstantaneous(vecZero)
+		p.phys:AddAngleVelocity(p.phys:GetAngleVelocity() * -1)
 		if not dontSleep then
-			phys:Sleep()
+			p.phys:Sleep()
 		end
 	end
 end
@@ -168,10 +210,9 @@ function u.freezeEntity(ent)
 	if type(ent) ~= "Entity" then return end
 	if not IsValid(ent) then return end
 
-	local phys = ent:GetPhysicsObject()
-
-	if IsValid(phys) then
-		phys:EnableMotion(false)
+	local p = u.getValidPhys(ent, false)
+	if p.valid then
+		p.phys:EnableMotion(false)
 	end
 end
 

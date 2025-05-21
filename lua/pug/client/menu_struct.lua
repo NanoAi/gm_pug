@@ -1,9 +1,11 @@
 local type = type
 local istable = istable
+local tostring = tostring
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local langGetPhrase = language.GetPhrase
 local string = string
 
+local optionParser = {}
 local pgm = {}
 pgm.typeBuilder = {
 	_i = {
@@ -16,6 +18,7 @@ pgm.typeBuilder = {
 -- setfenv( 1, pgm )
 
 pgm.rawData = {}
+pgm.options = {}
 pgm.RNDX = {}
 
 function pgm.l( str, describe )
@@ -27,7 +30,103 @@ function pgm.l( str, describe )
 	return re
 end
 
-function pgm.setupButton(button, src, colours, flags)
+local truthyStr = {
+	["on"] = true,
+	["off"] = false,
+	["yes"] = true,
+	["no"] = false,
+	["true"] = true,
+	["false"] = false,
+	["e"] = true,
+	["d"] = false,
+	["y"] = true,
+	["n"] = false,
+	["1"] = true,
+	["0"] = false,
+	["t"] = true,
+	["f"] = false,
+}
+function pgm.keyAsBool( any )
+	local key = string.lower(tostring(any))
+	local get = truthyStr[key]
+	if get == nil then
+		key = string.sub(key, 1, 1)
+		get = truthyStr[key]
+	end
+	return get
+end
+
+local function makeLayeredSet(root, keys, value)
+	local count = #keys
+
+	if #keys > 1 and keys[1] and keys[2] then
+		print(keys[1], keys[2])
+		print("[]", root, value)
+	end
+
+	if count == 1 then
+		root = value
+	end
+	
+	root = root or {}
+	root[0] = root
+
+	for i = 2, count do
+		if i == count then
+			local ref = root[keys[i]]
+			print(1)
+			if istable(ref) and ref.v then
+				print(2)
+				root[keys[i]].v = value
+				break
+			end
+			print(3)
+			root[keys[i]] = value
+			break
+		end
+		root[0][keys[i]] = {}
+		root[0] = root[0][keys[i]]
+	end
+
+	root[0] = nil
+	return root
+end
+
+function pgm.finalize()
+	for _, opt in next, optionParser do
+		local keys = {}
+		local node = opt.inferredParent
+		local default = { settings = {}, parent = node }
+		if node ~= nil then
+			for key in string.gmatch(opt.path, "([^/]+)") do
+				table.insert(keys, key)
+			end
+			
+			if #keys == 0 then
+				keys[1] = opt.path
+			end
+			
+			pgm.options[ node.key ] = pgm.options[ node.key ] or default
+
+			local root = pgm.options[ node.key ].settings[ keys[1] ]
+			pgm.options[ node.key ].settings[ keys[1] ] = makeLayeredSet(root, keys, opt)
+		end
+	end
+	optionParser = {} -- cleanup
+	PrintTable(pgm.options)
+end
+
+function pgm.setupButton(x, y, width, height, button, src, colours, flags, noBackground, setOffset)
+	colours = colours or {
+		base = Color(60, 60, 60, 255),
+		click = Color(80, 80, 80, 255),
+		image = Color(255, 255, 255, 255),
+		imageClick = Color(125, 125, 125, 255),
+	}
+
+	noBackground = noBackground or false
+	setOffset = setOffset or 3
+
   local RNDX = pgm.RNDX
 
   button.colours = colours
@@ -43,13 +142,14 @@ function pgm.setupButton(button, src, colours, flags)
 		if self.clicked then
 			colours.base = self.colours.click
 			colours.image = self.colours.imageClick
-			offset = 3
+			offset = setOffset
 		end
 
-		RNDX.Draw(8, 0, 4, w - 5, h - 4, colours.base, flags)
-		surface.SetMaterial( src )
-		surface.SetDrawColor( colours.image )
-		surface.DrawTexturedRect( w/4, h/4.75 + offset, w/2, h * 0.75 )
+		if not noBackground then
+			RNDX.Draw(8, 0, 4, w - 5, h - 4, colours.base, flags)
+		end
+		-- w/2 = 37.5, h * 0.75 = 37.5 | Rounding to 38.
+		RNDX.DrawMaterial(0, x, y + offset, width, height, colours.image, src, RNDX.SHAPE_FIGMA)
 	end
 
 	function button:Clicked()
@@ -91,46 +191,39 @@ function pgm.setDataValue(node, path, value)
 		keys[1] = path
 	end
 	
-	local c = #keys 
-	local v = pgm.rawData[ node.key ].data.settings[ keys[1] ]
-
-	if c > 1 and istable(v) then
-		if c == 3 then
-			v[keys[2]][keys[3]].v = value
-		elseif c == 2 then
-			v[keys[2]].v = value
-		end
-		pgm.rawData[ node.key ].data.settings[ keys[1] ] = v
-	else
-		v = value
-	end
-
-	pgm.rawData[ node.key ].data.settings[ keys[1] ] = v
+	local root = pgm.rawData[ node.key ].data.settings[ keys[1] ]
+	pgm.rawData[ node.key ].data.settings[ keys[1] ] = makeLayeredSet(root, keys, value)
 end
 
 function pgm.getDataValue(node, path)
-	local keys = {}
-	for key in string.gmatch(path, "([^/]+)") do
-		table.insert(keys, key)
-	end
+  local keys = {}
+  for key in string.gmatch(path, "([^/]+)") do
+    table.insert(keys, key)
+  end
 
-	if #keys == 0 then
-		keys[1] = path
-	end
-	
-	local c = #keys 
-	local v = pgm.rawData[ node.key ].data.settings[ keys[1] ]
+	local count = #keys
+  if count == 0 then
+    keys[1] = path
+		count = 1
+  end
 
-	if c > 1 and istable(v) then
-		if c == 3 then
-			return v[keys[2]][keys[3]].v
-		elseif c == 2 then
-			return v[keys[2]].v
-		end
-		pgm.rawData[ node.key ].data.settings[ keys[1] ] = v
-	else
-		return v
-	end
+	local current = pgm.rawData[ node.key ].data.settings[ keys[1] ]
+	for i = 2, count do
+    if not istable(current) then
+      return current
+    end
+    if current[keys[i]] == nil then
+      break
+    end
+		current = current[keys[i]]
+  end
+
+  -- Handle special case: { inherit = boolean, v = any }
+  if istable(current) and isbool(current.inherit) and current.v ~= nil then
+    return current.v
+  end
+
+  return current
 end
 
 pgm.typeBuilder = {
@@ -141,17 +234,21 @@ pgm.typeBuilder = {
 			option.Icon:SetImage( "icon16/delete.png" )
 		end
 
-		function option:DoClick()
-			local enabled = pgm.getDataValue(node, self.path)
-			enabled = ( not enabled )
-
+		function option:UpdateOption( enabled )
+			if enabled == nil then
+				enabled = pgm.getDataValue(node, self.path)
+			end
 			if enabled then
 				self.Icon:SetImage( "icon16/accept.png" )
 			else
 				self.Icon:SetImage( "icon16/delete.png" )
 			end
-
 			pgm.setDataValue(node, self.path, enabled)
+		end
+
+		function option:DoClick()
+			local enabled = pgm.getDataValue(node, self.path)
+			self:Update(not enabled)
 		end
 		return true
 	end,
@@ -175,6 +272,23 @@ pgm.typeBuilder = {
 			function TextEntry:OnChange()
 				option.Icon:SetImage( "icon16/textfield_rename.png" )
 			end
+
+			function TextEntry:UpdateOption()
+				local entry = pgm.getDataValue(node, option.path)
+
+				if istable(entry) and entry.v then
+					entry = entry.v
+					print("v key found!!!!!")
+				end
+
+				if istable(entry) then
+					PrintTable(entry)
+				end
+
+				print("[SETTING TEXT] ", entry)
+				self:SetText(entry)
+				self:SaveEntry(entry)
+			end
 			
 			function TextEntry:SaveEntry(entry)
 				option.Icon:SetImage( "icon16/disk.png" )
@@ -182,6 +296,7 @@ pgm.typeBuilder = {
 			end
 
 			pgm.typeBuilder._TextEntry = TextEntry
+			option.child = TextEntry
 
 			local entry = pgm.getDataValue(node, option.path)
 			pgm.typeBuilder["textfield"][option.type](entry)
@@ -207,6 +322,7 @@ pgm.typeBuilder = {
 			end
 		end,
 		["string"] = function(entry)
+			local i = pgm.typeBuilder._TextEntry
 			function i:OnEnter()
 				entry = self:GetValue()
 				self:SaveEntry(entry)
@@ -225,11 +341,13 @@ function pgm.setOptionData(option, path, value)
 	option.path = path
 	option.value = value
 	option.type = type( value )
+	optionParser[#optionParser + 1] = option
 	return option
 end
 
 function pgm.addNodeOption(node, option)
 	if option ~= nil then
+		option.inferredParent = node
 		if not pgm.typeBuilder[option.type](node, option) then
 			pgm.typeBuilder["textfield"][0](node, option)
 		end

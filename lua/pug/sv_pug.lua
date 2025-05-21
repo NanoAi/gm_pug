@@ -189,10 +189,10 @@ repeat
 		return PUG._EnableMotion( self, bool )
 	end
 
-	function PhysObj:SetPos( pos )
-		PUG._SetPos( self, pos )
+	function PhysObj:SetPos( pos, teleport )
+		PUG._SetPos( self, pos, teleport )
 		timer.Simple(0.01, function()
-			hook.Run( "PUG.PostSetPos", self, pos )
+			hook.Run( "PUG.PostSetPos", self, pos, teleport )
 		end)
 	end
 until true
@@ -208,6 +208,18 @@ local function getBadEnt( ent )
 		end
 	end
 end
+
+hook.Add("StartCommand", "PUG.StartCommand", function( ply, userCommand )
+	local now = CurTime()
+	if isnumber(ply.PUGBlockAttack) and ply.PUGBlockAttack > now then
+		if userCommand:KeyDown(IN_ATTACK) then
+			userCommand:RemoveKey(IN_ATTACK)
+			ply.PUGBlockAttack = CurTime() + (FrameTime() * 2)
+		end
+	else
+		ply.PUGBlockAttack = nil
+	end
+end)
 
 hook.Add("OnEntityCreated", "PUG.EntityCreated", function( ent )
 	getBadEnt( ent )

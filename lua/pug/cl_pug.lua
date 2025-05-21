@@ -1,8 +1,9 @@
 local istable = istable
 local matCache = {
 	screen = Material( "materials/pug/terminal.png", "noclamp smooth" ),
-	upload = Material( "pug/icons/send.png", "noclamp smooth" ),
-	download = Material( "pug/icons/request.png", "noclamp smooth" ),
+	upload = Material( "pug/icons/send_small.png", "smooth" ),
+	download = Material( "pug/icons/request_small.png", "smooth" ),
+	icon = Material( "materials/pug/x256.png", "smooth" ),
 }
 
 local lang = include("pug/client/language.lua")
@@ -22,86 +23,104 @@ local frameData = {}
 
 PGM.RNDX = RNDX
 
-local function showSettings( data, len )
+local function showSettings( data, len, decompress )
 	dtree:Clear()
 
-	readFile = util.Decompress( data, len )
+	if decompress then
+		readFile = util.Decompress( data, len )
+	end
 
-	if readFile and readFile ~= "" then
+	if not readFile or readFile == "" then
+		notification.AddLegacy("Could not parse settings data.", NOTIFY_ERROR, 2)
+		surface.PlaySound("npc/metropolice/pain1.wav")
+		return
+	end
+	
+	if decompress then
 		PGM.rawData = util.JSONToTable( readFile )
-		if not istable( PGM.rawData ) then return end
+	else
+		PGM.rawData = data
+	end
 
-		for k, v in next, PGM.rawData do
-			local node = dtree:AddNode( k )
+	if not istable( PGM.rawData ) then
+		return
+	end
 
-			node.key = k
-			node.value = v
+	for k, v in next, PGM.rawData do
+		local node = dtree:AddNode( k )
 
-			function node:DoClick()
-				local enabled = PGM.rawData[ self.key ].enabled
-				enabled = ( not enabled )
+		node.key = k
+		node.value = v
 
-				if enabled then
-					self.Icon:SetImage( "icon16/accept.png" )
-				else
-					self.Icon:SetImage( "icon16/delete.png" )
-				end
-
-				PGM.rawData[ self.key ].enabled = enabled
+		function node:UpdateOption( enabled )
+			if enabled == nil then
+				enabled = PGM.rawData[ self.key ].enabled
 			end
-
-			function node:DoRightClick()
-				local line = string.format("%s - %s", l(self.key), l(self.key, true))
-				frame.console:Push(line)
-			end
-
-			if v.enabled then
-				node.Icon:SetImage( "icon16/accept.png" )
+			if enabled then
+				self.Icon:SetImage( "icon16/accept.png" )
 			else
-				node.Icon:SetImage( "icon16/delete.png" )
+				self.Icon:SetImage( "icon16/delete.png" )
 			end
+			PGM.rawData[ self.key ].enabled = enabled
+		end
 
-			if v.data and istable( v.data.settings ) then
-				local mem = {}
-				local folders = {}
+		function node:DoClick()
+			local enabled = PGM.rawData[ self.key ].enabled
+			self:UpdateOption( not enabled )
+		end
 
-				for kk, vv in next, v.data.settings do
-					local option = nil
+		function node:DoRightClick()
+			local line = string.format("%s - %s", l(self.key), l(self.key, true))
+			frame.console:Push(line)
+		end
 
-					if istable(vv) and vv[0] == "folder" then
-						local folder = kk
+		if v.enabled then
+			node.Icon:SetImage( "icon16/accept.png" )
+		else
+			node.Icon:SetImage( "icon16/delete.png" )
+		end
 
-						option = node:AddNode(l(folder))
-						option:DockPadding( 0, 0, 10, 0 )
-						option.type = vv[0]
-						option.isFolderLike = true
-						folders[folder] = {[0] = option}
-						vv[0] = nil
+		if v.data and istable( v.data.settings ) then
+			local mem = {}
+			local folders = {}
 
-						for opt, data in next, vv do
-							local path = string.format("%s/%s", folder, opt)
-							if data.inherit then
-								PGM.typeBuilder["boolean"](node, folders[folder][0])
-								PGM.setOptionData(folders[folder][0], path, data.v)
-							else
-								local folderNode = folders[folder][opt]
-								folderNode = folders[folder][0]:AddNode(l(opt))
-								folderNode = PGM.setOptionData(folderNode, path, data.v)
-								option = folderNode
-								PGM.addNodeOption(node, option)
-							end
+			for kk, vv in next, v.data.settings do
+				local option = nil
+
+				if istable(vv) and vv[0] == "folder" then
+					local folder = kk
+
+					option = node:AddNode(l(folder))
+					option:DockPadding( 0, 0, 10, 0 )
+					option.type = vv[0]
+					option.isFolderLike = true
+					folders[folder] = {[0] = option}
+					vv[0] = nil
+
+					for opt, data in next, vv do
+						local path = string.format("%s/%s", folder, opt)
+						if data.inherit then
+							PGM.typeBuilder["boolean"](node, folders[folder][0])
+							PGM.setOptionData(folders[folder][0], path, data.v)
+						else
+							local folderNode = folders[folder][opt]
+							folderNode = folders[folder][0]:AddNode(l(opt))
+							folderNode = PGM.setOptionData(folderNode, path, data.v)
+							option = folderNode
+							PGM.addNodeOption(node, option)
 						end
-					else
-						option = node:AddNode( l(kk) )
-						option:DockPadding( 0, 0, 10, 0 )
-						option = PGM.setOptionData(option, kk, vv)
-						PGM.addNodeOption(node, option)
 					end
-					-- END
+				else
+					option = node:AddNode( l(kk) )
+					option:DockPadding( 0, 0, 10, 0 )
+					option = PGM.setOptionData(option, kk, vv)
+					PGM.addNodeOption(node, option)
 				end
+				-- END
 			end
 		end
 	end
+	PGM.finalize()
 end
 
 
@@ -125,8 +144,10 @@ local function init()
 			RNDX.DrawCircle(w/2, (h/2) + 3, h * 0.75, Color(186, 29, 60, 250))
 		end
 
-		self.btnMaxim:Remove()
-		self.btnMinim:Remove()
+		if self.btnMaxim then
+			self.btnMaxim:Remove()
+			self.btnMinim:Remove()
+		end
 	end
 
 	function frame:OnClose()
@@ -135,17 +156,10 @@ local function init()
 	end
 
 	function frame:Paint(w, h)
-		-- draw.RoundedBox( 8, 0, 0, self:GetWide(), self:GetTall(), Color( 0, 0, 0, 150 ) )
 		-- RNDX.Draw(r, x, y, w, h, col, flags)
-
 		local w, h = self:GetWide(), self:GetTall()
     RNDX.Draw(8, 0, 0, w, h, nil, self.flags + RNDX.BLUR)
     RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 150), self.flags)
-
-		-- surface.SetFont( "GModToolName" )
-		-- surface.SetTextColor(227, 218, 201, 255)
-		-- surface.SetTextPos( 128, h - 125 ) 
-		-- surface.DrawText( "P.U.G" )
 
 		if frame.cmdr then
 			frame.cmdr:RequestFocus()
@@ -249,6 +263,19 @@ local function init()
 
 	local i = 0
 	local pastCommands = {}
+
+	function cmdr:CommandGo(out, sound, fail)
+		if not fail then
+			surface.PlaySound(sound or "HL1/fvox/bell.wav")
+			frame.console:Push(out or "[ OK ]")
+		else
+			frame.console:Push("Unknown command.")
+		end
+		self:SetText(strEmpty)
+		self:OnValueChange(strEmpty)
+		self:RequestFocus()
+	end
+
 	function cmdr:OnKeyCodeTyped( key )
 		local str = self:GetValue()
 
@@ -275,6 +302,12 @@ local function init()
 			end
 			return true
 		elseif key == KEY_ENTER then
+			local accept = false
+
+			local _input = self:GetText()
+			local args = string.Explode(" ", _input)
+			frame.console:Push("] " .. _input)
+
 			if not table.HasValue(pastCommands, string.Left(str, 1000)) then
 				if #pastCommands <= 50 then
 					table.insert(pastCommands, string.Left(str, 1000))
@@ -283,16 +316,88 @@ local function init()
 				end
 			end
 
-			if self:GetText() ~= "clear" then
-				frame.console:Push("] " .. self:GetText())
-				frame.console:Push("Unknown Command.")
-			else
-				frame.console:SetText(strEmpty)
+			if string.lower(_input) == "send" then
+				PGM.netSendSettings()
+				self:CommandGo("Sending Data to Server...", nil, false)
+				return true
 			end
 
-			self:SetText(strEmpty)
-			self:OnValueChange(strEmpty)
-			self:RequestFocus()
+			if string.lower(_input) == "get" then
+				PGM.netRequestSettings()
+				self:CommandGo("Updating Data...", nil, false)
+				return true
+			end
+
+			if _input == "clear" then
+				self:CommandGo(nil, "npc/turret_floor/click1.wav", false)
+				frame.console:SetText(strEmpty)
+				return true
+			end
+
+			if args[1] == "clean" then
+				-- pretend this does something.
+				self:CommandGo(nil, nil, false)
+				return true
+			end
+
+			do
+				local keys = { string.match(_input, "(%=)(.+)") }
+				if keys and keys[1] == "=" then
+					local stack = PGM.rawData
+
+					keys = string.Explode(" ", keys[2])
+					subKeys = string.Explode(".", keys[1])
+					local bool = PGM.keyAsBool(keys[2])
+
+					if #subKeys == 1 then
+						local panel = PGM.options[subKeys[1]].parent
+						if panel and bool ~= nil then
+							panel:UpdateOption(bool)
+							accept = true
+						end
+					else
+						local path = {}
+
+						for _, v in next, subKeys do
+							if not istable(stack) then
+								break
+							end
+							if istable(stack.data) and istable(stack.data.settings) then
+								stack = stack.data.settings
+							end
+							for k, vv in next, stack do
+								if (k == v) then
+									stack = vv
+									path[#path + 1] = v
+								end
+							end
+						end
+
+						if #path > 0 then
+							local panel = PGM.options[path[1]].settings[path[2]]
+							local entry = bool == nil and keys[2] or bool
+							entry = (panel.type == "boolean" and bool) or keys[2]
+
+							if path[3] then
+								panel = panel[path[3]]
+							end
+
+							if panel then
+								PGM.setDataValue(panel.inferredParent, panel.path, entry)
+								print(panel.path, entry)
+								if panel.child then
+									panel.child:UpdateOption()
+								else
+									panel:UpdateOption()
+								end
+								accept = true
+							end
+						end
+					end
+				end
+
+				self:CommandGo(nil, nil, not accept)
+			end
 
 			return true
 		end
@@ -315,7 +420,7 @@ local function init()
 	request:Dock( RIGHT )
 	request:DockMargin( 0, 0, 5, 0 )
 
-	PGM.setupButton(request, matCache.download, buttonColours, frame.flags)
+	PGM.setupButton(18.75, 9, 38, 38, request, matCache.download, buttonColours, frame.flags)
 
 	function request:DoClick()
 		self:Clicked()
@@ -327,7 +432,7 @@ local function init()
 	send:SetTooltip("Send Data")
 	send:SetSize(75, 25)
 	send:Dock( RIGHT )
-	PGM.setupButton(send, matCache.upload, buttonColours, frame.flags)
+	PGM.setupButton(18.75, 9, 38, 38, send, matCache.upload, buttonColours, frame.flags)
 
 	function send:DoClick()
 		self:Clicked()
@@ -356,10 +461,16 @@ local function init()
 	end
 	frame.console = term
 
-	local pugImg = vgui.Create("DImage", frame)
+	local pugImg = vgui.Create("DButton", frame)
+	pugImg:SetText( strEmpty )
 	pugImg:SetPos(5, 500 - 128)
 	pugImg:SetSize(128, 128)
-	pugImg:SetImage("materials/pug/x256.png")
+	PGM.setupButton(0, 0, 127, 127, pugImg, matCache.icon, nil, nil, true, -3)
+	function pugImg:DoClick()
+		self:Clicked()
+		surface.PlaySound("UI/buttonclick.wav")
+	end
+	-- pugImg:SetImage("materials/pug/x256.png")
 
 	-- Send a request for data to the server.
 	PGM.netRequestSettings()
@@ -385,7 +496,7 @@ net.Receive("pug.menu", function()
 end)
 
 net.Receive("pug.send", function( len )
-	showSettings( net.ReadData( len ), len )
+	showSettings( net.ReadData( len ), len, true )
 end)
 
 CreateConVar("pug_enabled", "1", FCVAR_ARCHIVE, lang.notificationToggle, 0, 1)
