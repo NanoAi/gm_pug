@@ -160,10 +160,6 @@ local function init()
 		local w, h = self:GetWide(), self:GetTall()
     RNDX.Draw(8, 0, 0, w, h, nil, self.flags + RNDX.BLUR)
     RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 150), self.flags)
-
-		if frame.cmdr then
-			frame.cmdr:RequestFocus()
-		end
 	end
 
 	local p = vgui.Create( "DPanel", frame )
@@ -340,65 +336,7 @@ local function init()
 				return true
 			end
 
-			do
-				local keys = { string.match(_input, "(%=)(.+)") }
-				if keys and keys[1] == "=" then
-					local stack = PGM.rawData
-
-					keys = string.Explode(" ", keys[2])
-					subKeys = string.Explode(".", keys[1])
-					local bool = PGM.keyAsBool(keys[2])
-
-					if #subKeys == 1 then
-						local panel = PGM.options[subKeys[1]].parent
-						if panel and bool ~= nil then
-							panel:UpdateOption(bool)
-							accept = true
-						end
-					else
-						local path = {}
-
-						for _, v in next, subKeys do
-							if not istable(stack) then
-								break
-							end
-							if istable(stack.data) and istable(stack.data.settings) then
-								stack = stack.data.settings
-							end
-							for k, vv in next, stack do
-								if (k == v) then
-									stack = vv
-									path[#path + 1] = v
-								end
-							end
-						end
-
-						if #path > 0 then
-							local panel = PGM.options[path[1]].settings[path[2]]
-							local entry = bool == nil and keys[2] or bool
-							entry = (panel.type == "boolean" and bool) or keys[2]
-
-							if path[3] then
-								panel = panel[path[3]]
-							end
-
-							if panel then
-								PGM.setDataValue(panel.inferredParent, panel.path, entry)
-								print(panel.path, entry)
-								if panel.child then
-									panel.child:UpdateOption()
-								else
-									panel:UpdateOption()
-								end
-								accept = true
-							end
-						end
-					end
-				end
-
-				self:CommandGo(nil, nil, not accept)
-			end
-
+			self:CommandGo(nil, nil, true)
 			return true
 		end
 	end
@@ -489,7 +427,10 @@ net.Receive("pug.menu", function()
 		frame:Show()
 		frame:MakePopup()
 		dtree:Clear()
-		timer.Simple(0.3, function()
+		timer.Simple(0.1, function()
+			if frame.cmdr then
+				frame.cmdr:RequestFocus()
+			end
 			PGM.netRequestSettings()
 		end)
 	end
@@ -497,6 +438,9 @@ end)
 
 net.Receive("pug.send", function( len )
 	showSettings( net.ReadData( len ), len, true )
+	if frame.cmdr then
+		frame.cmdr:RequestFocus()
+	end
 end)
 
 CreateConVar("pug_enabled", "1", FCVAR_ARCHIVE, lang.notificationToggle, 0, 1)
