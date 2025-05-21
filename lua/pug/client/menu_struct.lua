@@ -59,11 +59,6 @@ end
 local function makeLayeredSet(root, keys, value)
 	local count = #keys
 
-	if #keys > 1 and keys[1] and keys[2] then
-		print(keys[1], keys[2])
-		print("[]", root, value)
-	end
-
 	if count == 1 then
 		root = value
 	end
@@ -74,13 +69,10 @@ local function makeLayeredSet(root, keys, value)
 	for i = 2, count do
 		if i == count then
 			local ref = root[keys[i]]
-			print(1)
 			if istable(ref) and ref.v then
-				print(2)
 				root[keys[i]].v = value
 				break
 			end
-			print(3)
 			root[keys[i]] = value
 			break
 		end
@@ -113,7 +105,6 @@ function pgm.finalize()
 		end
 	end
 	optionParser = {} -- cleanup
-	PrintTable(pgm.options)
 end
 
 function pgm.setupButton(x, y, width, height, button, src, colours, flags, noBackground, setOffset)
@@ -278,14 +269,8 @@ pgm.typeBuilder = {
 
 				if istable(entry) and entry.v then
 					entry = entry.v
-					print("v key found!!!!!")
 				end
 
-				if istable(entry) then
-					PrintTable(entry)
-				end
-
-				print("[SETTING TEXT] ", entry)
 				self:SetText(entry)
 				self:SaveEntry(entry)
 			end

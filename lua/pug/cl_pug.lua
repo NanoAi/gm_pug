@@ -531,5 +531,7 @@ end
 concommand.Add("pug_reload_menu", init, nil, "Reload the menu for PUG.")
 concommand.Add("pug_data_dump", function()
 	print(PGM.rawData)
-	PrintTable(PGM.rawData)
+	if istable(PGM.rawData) then
+		PrintTable(PGM.rawData)
+	end
 end, nil, "Dump the currently loaded data set for PUG.")
