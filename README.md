@@ -4,10 +4,7 @@
 <div align="center">
 <img src="https://github.com/NanoAi/gm_pug/blob/dev/materials/pug/x256.png?raw=true" alt="gm_pug logo" width="256px"/>
 <hr/><br/>
-<img src="https://github.com/user-attachments/assets/c5e3f7ae-9fce-4541-b50f-85992bea8429" alt="Menu Preview" width="500px"/>
-
- (New Menu Coming Soon!)
-
+<img src="https://github.com/user-attachments/assets/2eb6a806-4e60-4cb9-aab4-2806abf31a80" alt="Menu Preview" width="800px"/>
 <br/><br/>
 </div>
 
