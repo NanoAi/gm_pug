@@ -1,4 +1,6 @@
+local langGetPhrase = language.GetPhrase
 local istable = istable
+
 local matCache = {
 	screen = Material( "materials/pug/terminal.png", "noclamp smooth" ),
 	upload = Material( "pug/icons/send_small.png", "smooth" ),
@@ -438,7 +440,7 @@ net.Receive("pug.notify", function()
 	end
 
 	local str, type, length = net.ReadString(), net.ReadInt(4), net.ReadInt(4)
-	str = l( str ) or str
+	str = langGetPhrase( str ) or str
 
 	notification.AddLegacy( str, type, length )
 	print( "NOTIFY: ", str )
