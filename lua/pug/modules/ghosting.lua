@@ -264,13 +264,8 @@ u.addHook("PUG.PostPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 		if IsValid( ent ) then
 			PUG:Ghost( ent )
 			if constraint.HasConstraints( ent ) then
-				-- local denyMovement = cw(ent, Entity(0), 0, 0, 0, false, false)
-				-- ent.PUGWeld = denyMovement
-				local valid, phys = u.isValidPhys( ent, false )
-				if valid then
-					phys:EnableMotion( false )
-					phys:Sleep()
-				end
+				local denyMovement = cw(ent, Entity(0), 0, 0, 0, false, false)
+				ent.PUGWeld = denyMovement
 			end
 		end
 	end)
@@ -282,10 +277,10 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 			if not IsValid(ent) then return end
 			if u.isEntityHeld( ent ) then return end
 			PUG:UnGhost( ent )
-			-- if ent.PUGWeld then
-			-- 	ent.PUGWeld:Remove()
-			-- 	ent.PUGWeld = nil
-			-- end
+			if ent.PUGWeld then
+				ent.PUGWeld:Remove()
+				ent.PUGWeld = nil
+			end
 		end)
 	end)
 end, hooks)

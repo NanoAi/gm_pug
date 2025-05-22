@@ -299,8 +299,7 @@ local function init()
 			return true
 		elseif key == KEY_ENTER then
 			local accept = false
-
-			local _input = self:GetText()
+			local _input = string.lower(tostring(self:GetText()))
 			local args = string.Explode(" ", _input)
 			frame.console:Push("] " .. _input)
 
@@ -312,31 +311,14 @@ local function init()
 				end
 			end
 
-			if string.lower(_input) == "send" then
-				PGM.netSendSettings()
-				self:CommandGo("Sending Data to Server...", nil, false)
-				return true
-			end
+			local commandFound = PGM.Commands[_input](panel, {
+				console = frame.console,
+				args = args,
+			})
 
-			if string.lower(_input) == "get" then
-				PGM.netRequestSettings()
-				self:CommandGo("Updating Data...", nil, false)
-				return true
+			if not commandFound then
+				self:CommandGo(nil, nil, true)
 			end
-
-			if _input == "clear" then
-				self:CommandGo(nil, "npc/turret_floor/click1.wav", false)
-				frame.console:SetText(strEmpty)
-				return true
-			end
-
-			if args[1] == "clean" then
-				-- pretend this does something.
-				self:CommandGo(nil, nil, false)
-				return true
-			end
-
-			self:CommandGo(nil, nil, true)
 			return true
 		end
 	end

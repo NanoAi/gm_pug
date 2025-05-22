@@ -5,6 +5,7 @@ local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local langGetPhrase = language.GetPhrase
 local string = string
 
+local strEmpty = ""
 local optionParser = {}
 local pgm = {}
 pgm.typeBuilder = {
@@ -12,10 +13,6 @@ pgm.typeBuilder = {
 		TextEntry = false,
 	}
 }
-
--- This __index should only reference in memory so no overhead.
--- setmetatable(pgm, {__index = function() return _G end})
--- setfenv( 1, pgm )
 
 pgm.rawData = {}
 pgm.options = {}
@@ -29,6 +26,35 @@ function pgm.l( str, describe )
 	end
 	return re
 end
+
+pgm.Commands = {
+	["clear"] = function(panel, d)
+		panel:CommandGo(nil, "npc/turret_floor/click1.wav", false)
+		d.console:SetText(strEmpty)
+		return true
+	end,
+	["send"] = function(panel, d)
+		pgm.netSendSettings()
+		panel:CommandGo("Sending Data to Server...", nil, false)
+		return true
+	end,
+	["get"] = function(panel, d)
+		pgm.netRequestSettings()
+		panel:CommandGo("Updating Data...", nil, false)
+		return true
+	end,
+	["clean"] = function(panel, d)
+		-- Request Cleanup from server.
+		panel:CommandGo(nil, nil, false)
+		return true
+	end,
+}
+
+setmetatable(pgm.Commands, {
+	__index = function(data, key)
+		return (function() return false end)
+	end,
+})
 
 local truthyStr = {
 	["on"] = true,
