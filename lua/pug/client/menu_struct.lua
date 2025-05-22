@@ -87,6 +87,7 @@ local function makeLayeredSet(root, keys, value)
 
 	if count == 1 then
 		root = value
+		return root
 	end
 	
 	root = root or {}
@@ -265,7 +266,7 @@ pgm.typeBuilder = {
 
 		function option:DoClick()
 			local enabled = pgm.getDataValue(node, self.path)
-			self:Update(not enabled)
+			self:UpdateOption(not enabled)
 		end
 		return true
 	end,

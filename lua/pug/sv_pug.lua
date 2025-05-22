@@ -3,6 +3,7 @@ PUG.util = include("pug/bin/util.lua")
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local hook, timer = hook, timer
 local u = PUG.util
+local l = PUG.lang.get
 
 -- TODO: Make badEnts & goodEnts use a Database.
 local badEnts = {
@@ -86,35 +87,40 @@ function PUG:addGoodEnt( class )
 	goodEnts[ class ] = true
 end
 
+PUG.meta = PUG.meta or {}
+
 repeat
-	local GM = GM or GAMEMODE
-
-	PUG._PhysgunPickup = PUG._PhysgunPickup or GM.PhysgunPickup
-	PUG._CanTool = PUG._CanTool or GM.CanTool
-
 	if PUG.hasLoaded then break end -- Clever way to discard the following if PUG was already loaded.
+	local GM = GM or GAMEMODE
+	
+	PUG.meta.GM = {
+		PhysgunPickup = GM.PhysgunPickup,
+		CanTool = GM.CanTool,
+	}
 
 	function GM:PhysgunPickup( ply, ent )
-		local canPickup = PUG._PhysgunPickup(self, ply, ent)
+		local canPickup = PUG.meta.GM.PhysgunPickup( self, ply, ent )
 		hook.Run( "PUG.PostPhysgunPickup", ply, ent, canPickup )
 		return canPickup
 	end
 
 	function GM:CanTool( ply, trace, mode )
-		local canTool = PUG._CanTool( self, ply, trace, mode )
+		local canTool = PUG.meta.GM.CanTool( self, ply, trace, mode )
 		hook.Run( "PUG.PostCanTool", ply, trace, mode, canTool )
 		return canTool
 	end
 until true
 
 repeat
+	if PUG.hasLoaded then break end
 	local ENT = FindMetaTable("Entity")
 
-	PUG._SetCollisionGroup = PUG._SetCollisionGroup or ENT.SetCollisionGroup
-	PUG._SetModelScale = PUG._SetModelScale or ENT.SetModelScale
-	PUG._SetColor = PUG._SetColor or ENT.SetColor
-
-	if PUG.hasLoaded then break end
+	PUG.meta.ENT = {
+		ManipulateBoneScale = ENT.ManipulateBoneScale,
+		SetCollisionGroup = ENT.SetCollisionGroup,
+		SetModelScale = ENT.SetModelScale,
+		SetColor = ENT.SetColor,
+	}
 
 	function ENT:SetCollisionGroup( group )
 		local getHook = hook.Run( "PUG.SetCollisionGroup", self, group )
@@ -126,7 +132,7 @@ repeat
 		end
 
 		if getHook ~= true then
-			PUG._SetCollisionGroup( self, group )
+			PUG.meta.ENT.SetCollisionGroup( self, group )
 		end
 	end
 
@@ -149,11 +155,9 @@ repeat
 		end
 
 		if not IsColor(color) then
-			local emsg = "Invalid color passed to SetColor! This error "
-			emsg = emsg .. "prevents stuff from turning purple/pink."
-			ErrorNoHaltWithStack( emsg )
+			ErrorNoHaltWithStack( l("invalid.colour") )
 		else
-			PUG._SetColor( self, color )
+			PUG.meta.ENT.SetColor( self, color )
 		end
 	end
 
@@ -161,22 +165,57 @@ repeat
 	--REF: https://github.com/Facepunch/garrysmod-issues/issues/3547
 
 	function ENT:SetModelScale( scale, deltaTime )
-		PUG._SetModelScale( self, scale, deltaTime )
+		local internal = PUG.meta.ENT.SetModelScale
+		local h, s, d = hook.Run("PUG.SetModelScale", self, scale, deltaTime)
+
+		if h == true then
+			scale = s or 1
+			deltaTime = d or 0
+		elseif h == false then
+			return
+		end
+
+		internal( self, scale, deltaTime )
 
 		local min, max = self:OBBMins(), self:OBBMaxs()
 		if min:Distance(max) > 12000 then
-			PUG._SetModelScale( self, 1, 0 )
+			internal( self, 1, 0 )
 			FixInvalidPhysicsObject( self )
 		end
+	end
+
+	function ENT:ManipulateBoneScale( id, scale, bypass )
+		bypass = bypass and true or false
+		local internal = PUG.meta.ENT.ManipulateBoneScale
+		local h, i, s, b = hook.Run("PUG.ManipulateBoneScale", self, id, scale, bypass)
+
+		if h == true then
+			id = i or nil
+			scale = s or nil
+			bypass = b or false
+		elseif h == false then
+			return
+		end
+
+		if not bypass and math.abs(scale) > 5 then
+			local clamp = scale > 0 and 5 or -5
+			local msg = string.format(l("bone.manipulate.clamp"), scale, clamp)
+			ErrorNoHaltWithStack(msg)
+			scale = clamp
+		end
+
+		internal( self, id, scale )
 	end
 until true
 
 repeat
-	local PhysObj = FindMetaTable( "PhysObj" )
-	PUG._EnableMotion = PUG._EnableMotion or PhysObj.EnableMotion
-	PUG._SetPos = PUG._SetPos or PhysObj.SetPos
-
 	if PUG.hasLoaded then break end
+
+	local PhysObj = FindMetaTable( "PhysObj" )
+	PUG.meta.PhysObj = {
+		EnableMotion = PhysObj.EnableMotion,
+		SetPos = PhysObj.SetPos,
+	}
 
 	function PhysObj:EnableMotion( bool )
 		local ent = self:GetEntity()
@@ -186,12 +225,12 @@ repeat
 		bool = override or bool
 		ent.PUGFrozen = (not bool)
 
-		return PUG._EnableMotion( self, bool )
+		return PUG.meta.PhysObj.EnableMotion( self, bool )
 	end
 
 	function PhysObj:SetPos( pos, teleport )
-		PUG._SetPos( self, pos, teleport )
-		timer.Simple(0.01, function()
+		PUG.meta.PhysObj.SetPos( self, pos, teleport )
+		timer.Simple(FrameTime(), function()
 			hook.Run( "PUG.PostSetPos", self, pos, teleport )
 		end)
 	end

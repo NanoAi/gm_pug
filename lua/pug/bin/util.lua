@@ -7,6 +7,7 @@ local IsValid = IsValid
 local IsValidModel = util.IsValidModel
 local setmetatable = setmetatable
 local type = type
+local physTime = physenv.GetLastSimulationTime
 local vecZero = Vector(0, 0, 0)
 local u = {}
 
@@ -165,6 +166,12 @@ function u.entityForceDrop(ent)
 		end
 	end
 	ent:ForcePlayerDrop()
+end
+
+function u.playerForceDrop(ply)
+	ply.PUGBlockAttack = CurTime() + (FrameTime() * 2)
+	ply:ConCommand("-attack")
+	ply:DropObject()
 end
 
 function u.entityIsMoving(ent, speed)
@@ -415,6 +422,11 @@ function u.tableReduce(func, tbl)
 	end
 
 	return out
+end
+
+function u.physTimer(mult, callback)
+	mult = (mult ~= nil) and mult or 1
+	timer.Simple(physTime() * mult, callback)
 end
 
 do
