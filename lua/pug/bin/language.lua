@@ -13,4 +13,5 @@ function lang.get(key)
   return langSet[key] or key
 end
 
+lang["mt2BC8cVRk"] = "i6SDIQhX9t" -- File verification.
 return lang
