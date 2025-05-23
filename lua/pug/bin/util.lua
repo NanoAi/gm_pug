@@ -270,6 +270,13 @@ do
 		local module = (cm and cm.data.settings) or {}
 		assert(defaults ~= nil, "Default data values must be passed.")
 
+		-- Cleanup unused keys.
+		for k, _ in next, module do
+			if defaults[ k ] == nil then
+				module[ k ] = nil
+			end
+		end
+
 		if not cm.data then
 			module = defaults
 		else

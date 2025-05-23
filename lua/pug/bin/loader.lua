@@ -109,24 +109,8 @@ function PUG:saveConfig( data )
 			return
 		end
 
-		-- Look for saved data that does not actually exist and remove it.
-		-- k is Key, v is Value, _ is Dropped/Unused.
-
 		data[0] = nil -- Clear the [0] table of the data.
-		for k, _ in next, data do
-			if not self.modules[ k ] then
-				data[ k ] = nil
-			end
-		end
-
-		-- Update data with new modules if new modules were added.
-		for k, v in next, self.modules do
-			if not data[ k ] then
-				data[ k ] = v
-			end
-		end
-
-		self.modules = table.Merge( self.modules, data )
+		self.modules = table.Merge( self.modules, data ) -- Inject saved data.
 
 		for k, v in next, self.modules do
 			if v.enabled then
