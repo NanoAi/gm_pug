@@ -477,15 +477,15 @@ do
 		if task and not isnumber(task) then
 			if task.skips == 0 then
 				local ok, out = pcall(_t.rn[key].fn)
-				if ok then
-					if task.rerun > 0 and out ~= true then 
-						_t.rn[key].rerun = task.rerun - 1
-					else
-						_t.rn[key] = nil
-						count = count + 1
-					end
-				else
+				if not ok then
 					ErrorNoHaltWithStack(out)
+					out = true
+				end
+				if task.rerun > 0 and out ~= true then 
+					_t.rn[key].rerun = task.rerun - 1
+				else
+					_t.rn[key] = nil
+					count = count + 1
 				end
 			else
 				_t.rn[key].skips = task.skips - 1

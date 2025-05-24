@@ -287,10 +287,6 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 			if not IsValid(ent) then return end
 			if u.isEntityHeld( ent ) then return end
 			PUG:UnGhost( ent )
-			-- if ent.PUGWeld then
-			-- 	ent.PUGWeld:Remove()
-			-- 	ent.PUGWeld = nil
-			-- end
 			if ent.PUGLocked then
 				local p = u.getValidPhys(ent, false)
 				if p.valid then
