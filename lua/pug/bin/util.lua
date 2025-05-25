@@ -437,86 +437,35 @@ function u.physTimer(mult, callback)
 end
 
 do
-	local _t = {
-		size = 0,
-		rn = {}, -- List of functions added.
-		i = 25, -- The number of iterations.
-	}
-
-	do -- Prepare Tables
-		_t.rn.__index = _t.rn
-		_t.rn = setmetatable( { [ 0 ] = 0 }, _t.rn )
-	end
-
+	local numId = 0
 	u.tasks = {} -- Prepare Function Container.
-	
-	function u.tasks.print()
-		PrintTable(_t)
-	end
+	function u.tasks.add(fn, delay, reruns)
+		numId = numId + 1
+		delay = FrameTime() * (delay or 0)
+		reruns = reruns or 1
 
-	function u.tasks.add(fn, skips, rerun)
-		assert(isfunction(fn), "Argument #1 must be a function.")
-		_t.size = _t.rn[0]
-		_t.size = _t.size + 1
-		_t.rn[_t.size] = {
-			fn = fn,
-			skips = skips or 0,
-			rerun = rerun or 0,
+		local id = string.format("PUG.Task.%d", numId)
+		local task = { 
+			id = id,
+			fn = fn, 
+			delay = delay,
+			reruns = reruns,
 		}
-		_t.rn[0] = _t.size
-	end
 
-	function u.tasks.next(entry)
-		_t.rn[0] = _t.rn[0] + 1
-		_t.rn[_t.rn[0]] = entry
-	end
-
-	function u.tasks:run(key)
-		local count = 0
-		local task = _t.rn[key]
-		if task and not isnumber(task) then
-			if task.skips == 0 then
-				local ok, out = pcall(_t.rn[key].fn)
-				if not ok then
-					ErrorNoHaltWithStack(out)
-					out = true
-				end
-				if task.rerun > 0 and out ~= true then 
-					_t.rn[key].rerun = task.rerun - 1
-				else
-					_t.rn[key] = nil
-					count = count + 1
-				end
-			else
-				_t.rn[key].skips = task.skips - 1
+		timer.Create(id, delay, 0, function()
+			task.reruns = task.reruns - 1
+			local ok, result = pcall(task.fn)
+			if not ok then
+				ErrorNoHaltWithStack(result)
+				timer.Remove(task.id)
+				return
 			end
-		end
-		_t.rn[0] = _t.rn[0] - count
-		_t.rn[0] = (_t.rn[0] < 0) and 0 or _t.rn[0]
-	end
-
-	function u.tasks:process(iters)
-		for key, _ in next, _t.rn do
-			if iters < 0 then break end
-			if key ~= 0 then
-				self:run(key)
-				iters = iters - 1
+			if result == true or task.reruns <= 0 then
+				timer.Remove(task.id)
+				return
 			end
-		end
-	end
-
-	function u.tasks.unhook()
-		hook.Remove("Tick", "PUG_TaskProcessor")
-	end
-
-	function u.tasks.hook()
-		hook.Remove("Tick", "PUG_TaskProcessor")
-		hook.Add("Tick", "PUG_TaskProcessor", function()
-			u.tasks:process(_t.i)
 		end)
 	end
-
-	u.tasks.hook()
 end
 
 return u
