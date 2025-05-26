@@ -62,7 +62,7 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 				u.tasks.add(function()
 					ent:SetCollisionGroup( COLLISION_GROUP_WORLD )
 					ent:CollisionRulesChanged()
-				end)
+				end, 0, 0)
 				for _, e in next, { entPhys, hit } do
 					e:EnableMotion( false )
 				end
@@ -110,7 +110,7 @@ u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
 		if not IsValid( ent ) then return end
 		if not ent:IsSolid() then return end
 		ent.PUG_CollisionCallbackHook = ent:AddCallback( "PhysicsCollide", physCollide )
-	end)
+	end, 0, 0)
 end, hooks, (not _s.enableHook))
 
 return u.settings.release(hooks, _s)

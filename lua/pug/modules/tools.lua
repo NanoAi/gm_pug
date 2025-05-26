@@ -150,7 +150,7 @@ u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)
 				ent:fadeActivate()
 			end
 		end
-	end)
+	end, 0, 0)
 end, hooks, (not _s.addFadingDoorHooks))
 
 return u.settings.release(hooks, _s)

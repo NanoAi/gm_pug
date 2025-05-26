@@ -45,7 +45,7 @@ u.addHook("OnEntityCreated", "physgun", function( ent )
 		if IsValid( phys ) then
 			phys:EnableMotion( false )
 		end
-	end)
+	end, 0, 0)
 end, hooks)
 
 u.addHook("OnPhysgunReload", "physgun", function()

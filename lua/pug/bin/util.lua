@@ -442,7 +442,7 @@ do
 	function u.tasks.add(fn, delay, reruns)
 		numId = numId + 1
 		delay = FrameTime() * (delay or 0)
-		reruns = reruns or 1
+		reruns = reruns or 0
 
 		local id = string.format("PUG.Task.%d", numId)
 		local task = { 

@@ -253,7 +253,7 @@ u.addHook("PUG.PostSetPos", "Ghosting", function( phys )
 		if IsValid( ent ) and ent.PUGBadEnt then
 			PUG:Ghost( ent )
 		end
-	end)
+	end, 0, 0)
 end, hooks, (not _s.ghostSetPos))
 
 u.addHook("OnPhysgunPickup", "Ghosting", function(_, ent, canPickup)
@@ -274,7 +274,7 @@ u.addHook("OnPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 				end
 			end, 2, 0)
 		end
-	end)
+	end, 0, 0)
 end, hooks)
 
 u.addHook("OnPhysgunFreeze", "Ghosting", function(_, _, ent)
@@ -294,7 +294,7 @@ u.addHook("PhysgunDrop", "Ghosting", function(_, ent)
 				end
 				ent.PUGLocked = nil
 			end
-		end)
+		end, 0, 0)
 	end)
 end, hooks)
 
