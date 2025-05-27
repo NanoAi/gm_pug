@@ -17,10 +17,12 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-    - uses: actions/stale@v5
+    - uses: actions/stale@v9.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Stale issue message'
-        stale-pr-message: 'Stale pull request message'
-        stale-issue-label: 'no-issue-activity'
-        stale-pr-label: 'no-pr-activity'
+        labels-to-remove-when-unstale: 'stale'
+        stale-issue-message: 'This issue has not been updated in a while. (Closing in 7 days.)'
+        stale-pr-message: 'This pull request has not been updated in a while. (Closing in 7 days.)'
+        days-before-issue-close: 7
+        stale-issue-label: 'stale'
+        stale-pr-label: 'stale'
