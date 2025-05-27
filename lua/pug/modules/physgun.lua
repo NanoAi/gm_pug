@@ -54,4 +54,4 @@ u.addHook("OnPhysgunReload", "physgun", function()
 	end
 end, hooks)
 
-return u.settings.release(hooks, _s)
+return u.settings.release(hooks, nil, _s)

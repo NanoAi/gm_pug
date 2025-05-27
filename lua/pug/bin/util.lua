@@ -1,3 +1,4 @@
+---@meta
 local hook = hook
 local istable = istable
 local isfunction = isfunction
@@ -7,8 +8,11 @@ local IsValid = IsValid
 local IsValidModel = util.IsValidModel
 local setmetatable = setmetatable
 local type = type
+local stringFormat = string.format
 local physTime = physenv.GetLastSimulationTime
 local vecZero = Vector(0, 0, 0)
+
+---@class PUG.util
 local u = {}
 
 dirs = {
@@ -138,6 +142,7 @@ end
 
 function u.getCPPIOwner(ent)
 	if type(cppiOwner) ~= "function" then
+		print("[PUG][ERROR] We need a prop protection to function!")
 		return
 	end
 	local owner = cppiOwner(ent)
@@ -309,13 +314,14 @@ do
 		return setmetatable(bindTo, {__index = bindTo[0]})
 	end
 
-	function _s.release(hooks, settings)
+	function _s.release(hooks, timers, settings)
 		if settings[0] then
 			settings = settings[0]
 			settings[0] = nil
 		end
 		return {
 			hooks = hooks,
+			timers = timers,
 			settings = settings,
 		}
 	end
@@ -324,7 +330,7 @@ do
 		local cm = u.returnIfValid(_s.isModuleValid, PUG.currentModule)
 		settings = settings or {}
 
-		local path = string.format("%s/%s/%s", dirs.modules, cm.key, path)
+		local path = stringFormat("%s/%s/%s", dirs.modules, cm.key, path)
 		local data = include(path)
 		table.Merge(settings, data.settings)
 		table.Merge(hooks, data.hooks)
@@ -347,73 +353,124 @@ do
 	u.settings = _s
 end
 
-function u.remHook(callID, id, store)
-	assert(istable(store) == true, "A storage table must be passed!")
-	id = "PUG." .. id
+do
+	local _module = nil
 
-	print("[PUG][HOOKS] Removing " .. id .. " @ " .. callID)
-	hook.Remove(callID, id)
+	local function remCall(callID, id, store, isHook, append)
+		local tag = isHook and "HOOK" or "TIMER"
+		local hookNotice = callID and stringFormat(" @ \"%s\"", callID) or ""
+		assert(istable(store) == true, "A storage table must be passed!")
 
-	-- Cleanup data store.
-	for index, getTable in next, store do
-		for cid, hid in next, getTable do
-			if (cid == callID and hid == id) then
-				store[index][callID] = nil
-				break
+		if append then
+			_module = (_module and _module) or PUG.currentModule.key or "<NIL>"
+			id = stringFormat("PUG.%s.%s", _module, id)
+		end
+
+		print(stringFormat("[PUG][%s] Removing \"%s\"%s", tag, id, hookNotice))
+		if isHook then
+			hook.Remove(callID, id)
+		else
+			timer.Remove(id)
+		end
+
+		-- Cleanup data store.
+		callID = callID or id
+		for index, getTable in next, store do
+			for cid, hid in next, getTable do
+				if (cid == callID and hid == id) then
+					store[index][callID] = nil
+					break
+				end
 			end
 		end
+
+		return store, #store
 	end
 
-	return store, #store
-end
+	local function addCall(callID, id, delay, reps, callback, store, remCond, isHook)
+		assert(store and istable(store) == true, "A storage table must be passed!")
 
-function u.addHook(callID, id, callback, store, removeCondition)
-	assert(istable(store) == true, "A storage table must be passed!")
+		local halt = false
+		local index = #store + 1
 
-	local halt = false
-	local index = #store + 1
-	local hid = "PUG." .. id
+		_module = (_module and _module) or PUG.currentModule.key or "<NIL>"
+		id = stringFormat("PUG.%s.%s", _module, id)
 
-	if (removeCondition) then
-		if isbool(removeCondition) and removeCondition then
-			halt = true
+		if remCond ~= nil then
+			if isbool(remCond) and (not remCond) then
+				halt = true
+			end
+			if isfunction(removeCondition) and removeCondition() then
+				halt = true
+			end
 		end
-		if isfunction(removeCondition) and removeCondition() then
-			halt = true
-		end
-	end
 
-	if halt then
-		index = index - 1
-		u.remHook(callID, id, store)
+		if halt then
+			index = index - 1
+			if isHook then
+				-- u.remHook(callID, id, store)
+				remCall(callID, id, store, true, false)
+			else
+				-- u.remTimer(id, store)
+				remCall(callID, id, store, false, false)
+			end
+			return store, index
+		end
+
+		if isHook then
+			hook.Add(callID, id, callback)
+		else
+			timer.Create(id, delay, reps, callback)
+		end
+
+		callID = callID or id
+		store[index] = store[index] or {}
+		store[index][callID] = id
+
 		return store, index
 	end
 
-	hook.Add(callID, hid, callback)
-	store[index] = store[index] or {}
-	store[index][callID] = {
-		id = hid,
-		cond = removeCondition,
-	}
+	-- Prepare hooks for the current module.
+	-- boolean
+	function u.declareHooks(hasTimers)
+		_module = PUG.currentModule.key
+		return {
+			h = {}, -- Hooks
+			t = hasTimers and {} or nil, -- Timers
+		}
+	end
 
-	return store, index
-end
+	-- Remove a hook from PUG.
+	-- string, string, table
+	function u.remHook(callID, id, store)
+		return remCall(callID, id, store, true, true)
+	end
 
-function u.addTimer(timerID, delay, reps, callback, store, cond)
-	assert(istable(store) == true, "A storage table must be passed!")
+	-- Add a hook to PUG so that it can be removed when the module is unloaded.
+	-- string, string, function, table, boolean|function
+	function u.addHook(callID, id, callback, store, remCond)
+		return addCall(callID, id, nil, nil, callback, store, remCond, true)
+	end
 
-	local index = #store + 1
-	timerID = "PUG." .. timerID
+	---Remove a Timer added to PUG
+	---@param timerID string
+	---@param store table
+	---@return table
+	function u.remTimer(timerID, store)
+		return remCall(nil, timerID, store, false)
+	end
 
-	timer.Create(timerID, delay, reps, callback)
-	store[index] = store[index] or {}
-	store[index][timerID] = {
-		id = timerID,
-		delay = delay,
-		cond = cond,
-	}
+	-- Adds a timer to PUG.
+	-- string, number, number, function, table, boolean|function
+	function u.addTimer(timerID, delay, reps, callback, store, cond)
+		return addCall(nil, timerID, delay, reps, callback, store, remCond, false)
+	end
 
-	return store
+	function u.getHookID(id)
+		_module = (_module and _module) or PUG.currentModule.key or "<NIL>"
+		id = stringFormat("PUG.%s.%s", _module, id)
+		return id
+	end
 end
 
 function u.tableReduce(func, tbl)
@@ -444,7 +501,7 @@ do
 		delay = FrameTime() * (delay or 0)
 		reruns = reruns or 0
 
-		local id = string.format("PUG.Task.%d", numId)
+		local id = stringFormat("PUG.Task.%d", numId)
 		local task = { 
 			id = id,
 			fn = fn, 
@@ -468,4 +525,5 @@ do
 	end
 end
 
+---@class PUG.Util
 return u

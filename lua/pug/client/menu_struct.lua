@@ -1,3 +1,4 @@
+local unpack = unpack
 local type = type
 local istable = istable
 local tostring = tostring
@@ -18,6 +19,10 @@ pgm.rawData = {}
 pgm.options = {}
 pgm.RNDX = {}
 
+local function unpackColour(c)
+	return unpack({c.r, c.g, c.b, c.a})
+end
+
 function pgm.l( str, describe )
 	local key = describe and "vd" or "v"
 	local re = langGetPhrase( string.format("pug_%s.%s", key, str) )
@@ -31,6 +36,7 @@ pgm.Commands = {
 	["clear"] = function(panel, d)
 		panel:CommandGo(nil, "npc/turret_floor/click1.wav", false)
 		d.console:SetText(strEmpty)
+		d.console:InsertColorChange(unpackColour(color_white))
 		return true
 	end,
 	["send"] = function(panel, d)
@@ -45,7 +51,10 @@ pgm.Commands = {
 	end,
 	["clean"] = function(panel, d)
 		-- Request Cleanup from server.
-		panel:CommandGo(nil, nil, false)
+		panel:CommandGo("Cleaning Server...", nil, false)
+		net.Start("pug.cleanup.request")
+		net.WriteInt(d.args[2], 5)
+		net.SendToServer()
 		return true
 	end,
 }

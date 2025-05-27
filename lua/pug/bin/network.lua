@@ -4,9 +4,13 @@ util.AddNetworkString( "pug.send" )
 util.AddNetworkString( "pug.take" )
 util.AddNetworkString( "pug.notify" )
 util.AddNetworkString( "pug.PhysicsPing" )
+util.AddNetworkString( "pug.cleanup.request" )
 
-local playersInMenu = {}
 local sendTime = RealTime() + (FrameTime() * 2)
+local clean = include("pug/bin/cleanups.lua")
+local playersInMenu = {}
+local sf = string.format
+local l = PUG.lang.get
 local antiFlood = {}
 local size = 0
 
@@ -24,6 +28,13 @@ end
 local function timeInTicks(ticks)
 	ticks = ticks or 1
 	return FrameTime() * ticks
+end
+
+local function printPlayer(ply)
+	print("Bad Net Request from Player.")
+	print("SteamID: ", ply:SteamID64())
+	ply:DebugInfo()
+	print("---")
 end
 
 concommand.Add("pug", function( ply, cmd )
@@ -72,6 +83,7 @@ net.Receive("pug.send", function( len, ply )
 	if not IsValid( ply ) then return end
 
 	if not ply:IsSuperAdmin() then
+		printPlayer(ply)
 		ply:Kick()
 		return
 	end
@@ -136,6 +148,7 @@ net.Receive("pug.take", function( len, ply )
 	if not IsValid( ply ) then return end
 
 	if not ply:IsSuperAdmin() then
+		printPlayer(ply)
 		ply:Kick()
 		return
 	end
@@ -162,10 +175,45 @@ net.Receive("pug.take", function( len, ply )
 	end
 end)
 
+
+local callCleaner = {
+	[1] = {call = clean.unfrozen, name = "unfrozen"},
+	[2] = {call = clean.nonContraptions, name = "loose"},
+	[3] = {call = clean.clusters, name = "clusters"},
+	[4] = {call = clean.reset, name = "reset"},
+	[5] = {call = clean.custom, name = "custom"},
+	[6] = {call = clean.dry, name = "dry"},
+}
+
+setmetatable(callCleaner, {
+	__index = function()
+		return (function() return false end)
+	end,
+})
+
+net.Receive("pug.cleanup.request", function( len, ply )
+	if not IsValid(ply) then return end
+
+	if not ply:IsSuperAdmin() then
+		printPlayer(ply)
+		ply:Kick()
+		return
+	end
+
+	local _type = net.ReadInt(5) or 0
+	local cleaner = callCleaner[_type]
+	if response ~= false then
+		local msg = sf(l("pug.cleanup"), string.upper(cleaner.name))
+		cleaner.call()
+		PUG:Notify(msg, 4, 5, nil)
+	end
+end)
+
 net.Receive("pug.menu.close", function( len, ply )
 	if not IsValid(ply) then return end
 
-	if not ply:IsAdmin() or not ply:IsSuperAdmin() then
+	if not ply:IsSuperAdmin() then
+		printPlayer(ply)
 		ply:Kick()
 		return
 	end

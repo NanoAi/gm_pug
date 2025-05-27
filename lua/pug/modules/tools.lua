@@ -64,7 +64,7 @@ u.addHook("PUG.PostCanTool", "ToolSpamControl", function( ply, _, _, canTool )
 		end
 		return false
 	end
-end, hooks, (not _s.blockToolSpam))
+end, hooks, _s.blockToolSpam)
 
 u.addHook("PlayerSpawnObject", "ObjectSpamControl", function( ply )
 	if not _s.blockObjSpam then return end
@@ -79,14 +79,14 @@ u.addHook("PlayerSpawnObject", "ObjectSpamControl", function( ply )
 		end
 		return false
 	end
-end, hooks, (not _s.blockObjSpam))
+end, hooks, _s.blockObjSpam)
 
 u.addHook("CanTool", "ToolWorldControl", function(ply, tr)
 	if _s.blockToolWorld and tr.HitWorld then
 		PUG:Notify( "pug_toolworld", 1, 5, ply )
 		return false
 	end
-end, hooks, (not _s.blockToolWorld))
+end, hooks, _s.blockToolWorld)
 
 u.addHook("PUG.PostCanTool", "ToolUnfreezeControl", function(ply, tr, _, canTool)
 	if not canTool then return end
@@ -151,6 +151,6 @@ u.addHook("PUG.PostCanTool", "FadingDoors", function(ply, tr)
 			end
 		end
 	end, 0, 0)
-end, hooks, (not _s.addFadingDoorHooks))
+end, hooks, _s.addFadingDoorHooks)
 
-return u.settings.release(hooks, _s)
+return u.settings.release(hooks, nil, _s)

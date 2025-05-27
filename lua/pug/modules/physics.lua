@@ -90,4 +90,4 @@ u.addHook("EntityTakeDamage", "PUG_DamageControl", function(target, dmg)
 	end
 end, hooks)
 
-return u.settings.release(hooks, _s)
+return u.settings.release(hooks, nil, _s)

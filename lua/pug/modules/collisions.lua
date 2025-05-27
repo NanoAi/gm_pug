@@ -2,6 +2,7 @@ local u = PUG.util
 local zero = Vector(0,0,0)
 
 local hooks = {}
+local timers = {}
 local _s = u.settings.set({
 	enableHook = true,
 	maxCollisions = 23,
@@ -74,35 +75,37 @@ u.addHook("PUG.EntityPhysicsCollide", "SleepyPhys", function( ent, data )
 			obj.collisionTime = ( CurTime() + _s.cooldown )
 		end
 	end
-end, hooks, (not _s.enableHook))
+end, hooks, _s.enableHook)
 
 local entitySet = {}
-entitySet.__index = entitySet
-entitySet = setmetatable( { [ 0 ] = 0 }, entitySet )
-
 local function push(ent, data)
-	entitySet[0] = entitySet[0] + 1
-	entitySet[entitySet[0]] = {ent = ent, data = data}
+	local key = #entitySet + 1
+	entitySet[key] = {ent = ent, data = data}
 end
 
+local hk = u.getHookID("EntityProcessor")
 local function physCollide(ent, data)
 	if _s.enableHook then
 		push(ent, data)
 	end
-end
-
--- Only process 1000 collisions per tick to reduce server impact.
-u.addHook("Think", "CollisionProcessor", function()
-	local iters = 1000
-	for k, v in next, entitySet do
-		if iters < 0 then break end
-		if k ~= 0 then
-			hook.Run( "PUG.EntityPhysicsCollide", v.ent, v.data )
-			entitySet[k] = nil
-			iters = iters - 1
-		end
+	if timer.Exists(hk) then
+		return -- Only make a new timer if one doesn't exist already.
 	end
-end, hooks, (not _s.enableHook))
+	u.addTimer("EntityProcessor", 0, 0, function()
+		local iters = 1000
+		for k, v in next, entitySet do
+			if iters < 0 then break end
+			if k ~= 0 then
+				hook.Run( "PUG.EntityPhysicsCollide", v.ent, v.data )
+				entitySet[k] = nil
+				iters = iters - 1
+			end
+		end
+		if not next(entitySet) then
+			timer.Remove(hk)
+		end
+	end, timers)
+end
 
 u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
 	u.tasks.add(function()
@@ -111,6 +114,6 @@ u.addHook("OnEntityCreated", "HookEntityCollision", function( ent )
 		if not ent:IsSolid() then return end
 		ent.PUG_CollisionCallbackHook = ent:AddCallback( "PhysicsCollide", physCollide )
 	end, 0, 0)
-end, hooks, (not _s.enableHook))
+end, hooks, _s.enableHook)
 
-return u.settings.release(hooks, _s)
+return u.settings.release(hooks, timers, _s)

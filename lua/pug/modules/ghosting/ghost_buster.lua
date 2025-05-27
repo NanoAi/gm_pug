@@ -24,6 +24,6 @@ u.addHook("Think", "GhostBuster", function()
 			end
 		end
 	end
-end, hooks, (not _s.buster.enabled))
+end, hooks, _s.buster.enabled)
 
-return u.settings.release(hooks, _s)
+return u.settings.release(hooks, nil, _s)

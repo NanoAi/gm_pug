@@ -1,9 +1,16 @@
+---@class PUG.util
 PUG.util = include("pug/bin/util.lua")
 
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 local hook, timer = hook, timer
 local u = PUG.util
 local l = PUG.lang.get
+
+resource.AddFile( "sound/pug/breath.mp3" )
+resource.AddFile( "materials/pug/x256.png" )
+resource.AddFile( "materials/pug/terminal.png" )
+resource.AddFile( "materials/pug/icons/send_small.png" )
+resource.AddFile( "materials/pug/icons/request_small.png" )
 
 -- TODO: Make badEnts & goodEnts use a Database.
 local badEnts = {
@@ -241,11 +248,9 @@ local function getBadEnt( ent )
 		ent.PUGBadEnt = true
 		return true
 	else
-		if ent.PUGBadEnt then
-			ent.PUGBadEnt = nil
-			return false
-		end
+		ent.PUGBadEnt = nil
 	end
+	return false
 end
 
 hook.Add("StartCommand", "PUG.StartCommand", function( ply, userCommand )

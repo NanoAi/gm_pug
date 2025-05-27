@@ -254,7 +254,7 @@ u.addHook("PUG.PostSetPos", "Ghosting", function( phys )
 			PUG:Ghost( ent )
 		end
 	end, 0, 0)
-end, hooks, (not _s.ghostSetPos))
+end, hooks, _s.ghostSetPos)
 
 u.addHook("OnPhysgunPickup", "Ghosting", function(_, ent, canPickup)
 	-- if not canPickup then return end		
@@ -311,7 +311,7 @@ u.addHook("PUG.isBadEnt", "GhostHuge", function( ent, isBadEnt )
 	if phys:GetVolume() and phys:GetVolume() > _s.ghostHugeScale then
 		PUG:Ghost( ent )
 	end
-end, hooks, (not _s.ghostHugeOnSpawn))
+end, hooks, _s.ghostHugeOnSpawn)
 
 u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 	if not _s.ghostOnSpawn then return end
@@ -338,7 +338,7 @@ u.addHook("PUG.isBadEnt", "Ghosting", function( ent, isBadEnt )
 
 		return true
 	end, 1, 3)
-end, hooks, (not _s.ghostOnSpawn))
+end, hooks, _s.ghostOnSpawn)
 
 u.addHook("CanProperty", "Ghosting", function( _, _, ent )
 	if u.isGhostState(ent, 1, true) then
@@ -379,4 +379,4 @@ u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
 end, hooks)
 
 _G.PUG = PUG -- Pass to global.
-return u.settings.release(hooks, _s)
+return u.settings.release(hooks, nil, _s)

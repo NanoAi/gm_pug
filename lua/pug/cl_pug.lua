@@ -8,6 +8,7 @@ local matCache = {
 	icon = Material( "materials/pug/x256.png", "smooth" ),
 }
 
+local breathSound = Sound("pug/breath.mp3")
 local lang = include("pug/client/language.lua")
 local RNDX = include("pug/client/rndx.lua")
 local PGM = include("pug/client/menu_struct.lua")
@@ -245,12 +246,22 @@ local function init()
 	cmdr:RequestFocus()
 
 	function cmdr:Paint(w, h)
-		RNDX.Draw(8, 0, 0, w - 5, h, Color(50, 50, 50, 150), frame.flags)
+		w = w - 5
+
+		RNDX.Draw(8, 0, 0, w, h, Color(50, 50, 50, 150), frame.flags)
 		self:DrawTextEntryText(Color(255, 255, 255), Color(186, 29, 60), Color(255, 255, 255))
+
+		if not self:HasFocus() then
+			local clock = CurTime() % 1
+			if clock > 0.5 then
+				RNDX.Draw(8, 5, h/2 - h/4, 1, h/2, Color(186, 29, 60), frame.flags)
+			end
+		end
 	end
 
 	function cmdr:PerformLayout()
 		self:SetFontInternal("Trebuchet18")
+		self:SetPlaceholderText( "You can enter commands here!" )
 	end
 
 	function cmdr:SetCommand( str )
@@ -313,7 +324,7 @@ local function init()
 				end
 			end
 
-			local commandFound = PGM.Commands[_input](panel, {
+			local commandFound = PGM.Commands[args[1]](self, {
 				console = frame.console,
 				args = args,
 			})
@@ -378,8 +389,10 @@ local function init()
 		term:AppendText(line)
 		term:GotoTextEnd()
 	end
+	term:Push(os.date( "%d/%m/%Y @ %H:%M:%S" , os.time()))
+	term:Push("[•ﻌ•] Awaiting your command.\n", color_white)
 	function term:PerformLayout()
-		self:SetFontInternal("Trebuchet18")
+		self:SetFontInternal("HudHintTextLarge")
 	end
 	frame.console = term
 
@@ -391,6 +404,7 @@ local function init()
 	function pugImg:DoClick()
 		self:Clicked()
 		surface.PlaySound("UI/buttonclick.wav")
+		surface.PlaySound(breathSound)
 	end
 	-- pugImg:SetImage("materials/pug/x256.png")
 

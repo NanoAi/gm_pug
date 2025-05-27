@@ -9,6 +9,19 @@ language.Add("pug_lagdetected", "Lag detected, running cleanup function!")
 language.Add("pug_lagpanic", "Heavy lag detected, running panic function!")
 language.Add("pug_lagsettings", "Your average tickrate does not match your set tickrate, please review your settings!")
 
+language.Add("pug_v.collisions", "Collisions")
+language.Add("pug_vd.collisions", "Limit the amount of collisions entities may have. (Reduce Lag.)")
+language.Add("pug_v.tools", "Tools")
+language.Add("pug_vd.tools", "Control how the \"tool gun\" may be used on your server.")
+language.Add("pug_v.physgun", "Physgun")
+language.Add("pug_vd.physgun", "Control how the \"physgun\" maybe used on your server.")
+language.Add("pug_v.physics", "Physics")
+language.Add("pug_vd.physics", "Control how physics interact on your server.")
+language.Add("pug_v.ghosting", "Ghosting")
+language.Add("pug_vd.ghosting", "Limits interactions with entities as they are spawned/moved.")
+language.Add("pug_v.stacks", "Stacks")
+language.Add("pug_vd.stacks", "Limit prop stacks, works with \"fading doors\", \"physgun\", and \"tool gun\".")
+
 return {
   notificationToggle = "Disable or Enable receiving notifications from PUG.",
 }

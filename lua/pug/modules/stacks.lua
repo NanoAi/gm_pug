@@ -93,4 +93,4 @@ u.addHook("PUG.FadingDoorToggle", "stackCheck", function(ent, faded, ply)
 	lastCall = curTime + 0.001
 end, hooks)
 
-return u.settings.release(hooks, _s)
+return u.settings.release(hooks, nil, _s)
