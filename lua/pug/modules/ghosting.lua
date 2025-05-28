@@ -257,24 +257,22 @@ u.addHook("PUG.PostSetPos", "Ghosting", function( phys )
 end, hooks, _s.ghostSetPos)
 
 u.addHook("OnPhysgunPickup", "Ghosting", function(_, ent, canPickup)
-	-- if not canPickup then return end		
 	local p = u.getValidPhys(ent, false)
 	local pos = p.valid and p.phys:GetPos() or nil
+	
+	if not IsValid( ent ) then return end
+	PUG:Ghost( ent )
+
 	u.tasks.add(function()
-		if IsValid( ent ) then
-			PUG:Ghost( ent )
-			u.tasks.add(function()
-				local p = u.getValidPhys(ent, false)
-				if p.valid then
-					PUG.meta.PhysObj.SetPos(p.phys, pos)
-					if constraint.HasConstraints( ent ) then
-						ent.PUGLocked = true
-						p.phys:EnableMotion(false)
-					end
-				end
-			end, 2, 0)
+		local p = u.getValidPhys(ent, false)
+		if p.valid then
+			PUG.meta.PhysObj.SetPos(p.phys, pos)
+			if constraint.HasConstraints( ent ) then
+				ent.PUGLocked = true
+				p.phys:EnableMotion(false)
+			end
 		end
-	end, 0, 0)
+	end, 0, 3)
 end, hooks)
 
 u.addHook("OnPhysgunFreeze", "Ghosting", function(_, _, ent)
