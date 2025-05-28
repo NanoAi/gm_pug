@@ -21,8 +21,8 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         labels-to-remove-when-unstale: 'stale'
-        stale-issue-message: 'This issue has not been updated in a while. (Closing in 7 days.)'
-        stale-pr-message: 'This pull request has not been updated in a while. (Closing in 7 days.)'
+        stale-issue-message: 'This issue has not been updated in a while.'
+        stale-pr-message: 'This pull request has not been updated in a while.'
         days-before-issue-close: 7
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
