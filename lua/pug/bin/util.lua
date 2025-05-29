@@ -12,7 +12,6 @@ local stringFormat = string.format
 local physTime = physenv.GetLastSimulationTime
 local vecZero = Vector(0, 0, 0)
 
----@class PUG.util
 local u = {}
 
 dirs = {
@@ -525,5 +524,4 @@ do
 	end
 end
 
----@class PUG.Util
 return u

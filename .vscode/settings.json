@@ -1,9 +1,4 @@
 {
-  "Lua.diagnostics.disable": [
-    "undefined-global",
-    "undefined-field",
-    "deprecated"
-  ],
   "vsicons.associations.files": [
     {
       "icon": "lua",
@@ -20,5 +15,15 @@
     "gmod",
     "ipairs",
     "Physgun"
-  ]
+  ],
+  "commentAnchors.tags.matchPrefix": ["--"],
+  "commentAnchors.tags.matchSuffix": ["--"],
+  "commentAnchors.tags.anchors": {
+    "!": {
+      "iconColor": "default",
+      "highlightColor": "#A8C023",
+      "scope": "file"
+    },
+  },
+  "commentAnchors.tagHighlights.enabled": false,
 }
