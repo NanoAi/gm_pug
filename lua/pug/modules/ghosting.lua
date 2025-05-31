@@ -186,7 +186,11 @@ function PUG:Ghost( ent )
 			u.tasks.add(function()
 				if IsValid(phys) then
 					phys:EnableCollisions( true )
-					phys:EnableMotion( hasMotion )
+					if u.isEntityHeld(ent) then
+						phys:EnableMotion( true )
+					else
+						phys:EnableMotion( hasMotion )
+					end
 				end
 			end, 1, 1)
 		end

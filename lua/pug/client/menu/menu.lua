@@ -105,7 +105,7 @@ local function makeLayeredSet(root, keys, value)
 	for i = 2, count do
 		if i == count then
 			local ref = root[keys[i]]
-			if istable(ref) and ref.v then
+			if istable(ref) and ref.v ~= nil then
 				root[keys[i]].v = value
 				break
 			end
@@ -217,7 +217,7 @@ function pgm.setDataValue(node, path, value)
 	if #keys == 0 then
 		keys[1] = path
 	end
-	
+
 	local root = pgm.rawData[ node.key ].data.settings[ keys[1] ]
 	pgm.rawData[ node.key ].data.settings[ keys[1] ] = makeLayeredSet(root, keys, value)
 end

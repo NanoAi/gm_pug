@@ -6,9 +6,10 @@ eStr = string.format("\n[PUG][WARNING] %s; falling back to \"en\".\n", eStr)
 local conDesc = "Set PUGs current language, falls back to default."
 
 AddCSLuaFile("pug/cl_pug.lua")
+AddCSLuaFile("pug/client/menu/menu.lua")
+AddCSLuaFile("pug/client/menu/build.lua")
 AddCSLuaFile("pug/client/rndx.lua")
 AddCSLuaFile("pug/client/language.lua")
-AddCSLuaFile("pug/client/menu_struct.lua")
 CreateConVar("pug_lang", "en", FCVAR_ARCHIVE, conDesc)
 
 PUG = {}
