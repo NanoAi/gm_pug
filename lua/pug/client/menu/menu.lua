@@ -99,7 +99,7 @@ local function makeLayeredSet(root, keys, value)
 		return root
 	end
 	
-	root = root or {}
+	root = ispanel(root) and root or {} -- Ensure the panel is valid.
 	root[0] = root
 
 	for i = 2, count do
