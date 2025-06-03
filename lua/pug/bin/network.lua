@@ -97,11 +97,15 @@ net.Receive("pug.send", function( len, ply )
 
 		local readFile = file.Read( "pug_settings.json", "DATA" )
 		if readFile and readFile ~= "" then
+
+			print("[DEBUG] SENDING DATA...")
+			PrintTable(util.JSONToTable( readFile ))
+			print("=======\n\n")
+
 			local data = util.Compress( readFile )
 			net.Start("pug.send")
 			net.WriteData( data, #data )
 			net.Send( ply )
-
 			log( ply:SteamID() .. " requested PUG Data!" )
 		end
 	end
@@ -165,6 +169,9 @@ net.Receive("pug.take", function( len, ply )
 
 		if data then
 			data = util.Decompress( data, len )
+
+			print("[DEBUG]", data)
+			print("[DEBUG] 11111111111111")
 
 			local msg = "PUG Settings Updated "
 			msg = msg .. "by " .. steamid .. "!"

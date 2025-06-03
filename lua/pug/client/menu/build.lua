@@ -88,12 +88,9 @@ local function showSettings( data, len, decompress )
 			local folders = {}
 
 			for kk, vv in next, v.data.settings do
-				local option = nil
-
 				if istable(vv) and vv[0] == "folder" then
 					local folder = kk
-
-					option = node:AddNode(l(folder))
+					local option = node:AddNode(l(folder))
 					option:DockPadding( 0, 0, 10, 0 )
 					option.type = vv[0]
 					option.isFolderLike = true
@@ -105,6 +102,7 @@ local function showSettings( data, len, decompress )
 						if data.inherit then
 							PGM.typeBuilder["boolean"](node, folders[folder][0])
 							PGM.setOptionData(folders[folder][0], path, data.v)
+							node.folder = {name = kk, contents = vv}
 						else
 							local folderNode = folders[folder][opt]
 							folderNode = folders[folder][0]:AddNode(l(opt))
@@ -114,7 +112,7 @@ local function showSettings( data, len, decompress )
 						end
 					end
 				else
-					option = node:AddNode( l(kk) )
+					local option = node:AddNode( l(kk) )
 					option:DockPadding( 0, 0, 10, 0 )
 					option = PGM.setOptionData(option, kk, vv)
 					PGM.addNodeOption(node, option)

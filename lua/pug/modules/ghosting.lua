@@ -5,8 +5,7 @@ local l = PUG.lang.get
 local cw = constraint.Weld
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 
-local hooks = {}
-local _s = u.settings.set({
+local _s, hooks = u.settings.set({
 	ghostColour = {4, 20, 36, 250},
 	ghostSetPos = true,
 	ghostOnSpawn = true,
@@ -18,9 +17,9 @@ local _s = u.settings.set({
 	tryUnGhostTimer = 5, -- Modified on L26.
 	sleepOnUnGhost = true,
 	exposeGhoster = false,
-})
+	buster = {},
+}, {"ghost_buster.lua"}, false)
 
-_s = u.settings.merge(_s, hooks, "ghost_buster.lua")
 _s = u.settings.bind({
 	tryUnGhostTimer = _s.tryUnGhostTimer > 0 and _s.tryUnGhostTimer / 100 or 0,
 	ghostHugeScale = math.pow(10, _s.ghostHugeScale),

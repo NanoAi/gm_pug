@@ -8,7 +8,10 @@ local _s = u.settings.set({
 		enabled = false,
 		count = 1,
 	}, "enabled"),
-})
+}, nil, true)
+
+PrintTable(_s)
+PrintTable(PUG.currentModule)
 
 u.addHook("Think", "GhostBuster", function()
 	if (not _s.buster.enabled) then return end

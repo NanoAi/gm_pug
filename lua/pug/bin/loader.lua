@@ -38,6 +38,7 @@ function PUG:load( moduleName )
 		module.data = include( module.path )
 		module.enabled = true
 		module.loaded = true
+		self.modules[ moduleName ] = module -- Ensure the module is updated.
 	end
 end
 
@@ -109,7 +110,7 @@ function PUG:saveConfig( data )
 			return
 		end
 
-		data[0] = nil -- Clear the [0] table of the data.
+		-- data[0] = nil -- Clear the [0] table of the data.
 		self.modules = table.Merge( self.modules, data ) -- Inject saved data.
 
 		for k, v in next, self.modules do

@@ -91,29 +91,30 @@ function pgm.keyAsBool( any )
 	return get
 end
 
-local function makeLayeredSet(root, keys, value)
+local function makeLayeredSet(root, keys, value, fallback)
 	local count = #keys
 
 	if count == 1 then
 		root = value
 		return root
 	end
-	
-	root = ispanel(root) and root or {} -- Ensure the panel is valid.
-	root[0] = root
 
+	if not ispanel(root) then
+		root = fallback.folder.contents
+	end
+
+	root[0] = root
 	for i = 2, count do
 		if i == count then
 			local ref = root[keys[i]]
-			if istable(ref) and ref.v ~= nil then
-				root[keys[i]].v = value
+			if ref.v ~= nil then
+				root[keys[i]].v = value or ref.v
 				break
 			end
-			root[keys[i]] = value
-			break
+			error("This should never happen. Please, report this issue.")
 		end
-		root[0][keys[i]] = {}
-		root[0] = root[0][keys[i]]
+		-- root[0][keys[i]] = {}
+		-- root[0] = root[0][keys[i]]
 	end
 
 	root[0] = nil
@@ -133,11 +134,11 @@ function pgm.finalize()
 			if #keys == 0 then
 				keys[1] = opt.path
 			end
-			
+
 			pgm.options[ node.key ] = pgm.options[ node.key ] or default
 
 			local root = pgm.options[ node.key ].settings[ keys[1] ]
-			pgm.options[ node.key ].settings[ keys[1] ] = makeLayeredSet(root, keys, opt)
+			pgm.options[ node.key ].settings[ keys[1] ] = makeLayeredSet(root, keys, nil, node)
 		end
 	end
 	optionParser = {} -- cleanup
@@ -219,7 +220,7 @@ function pgm.setDataValue(node, path, value)
 	end
 
 	local root = pgm.rawData[ node.key ].data.settings[ keys[1] ]
-	pgm.rawData[ node.key ].data.settings[ keys[1] ] = makeLayeredSet(root, keys, value)
+	pgm.rawData[ node.key ].data.settings[ keys[1] ] = makeLayeredSet(root, keys, value, node)
 end
 
 function pgm.getDataValue(node, path)

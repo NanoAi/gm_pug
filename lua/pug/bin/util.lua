@@ -269,15 +269,19 @@ do
 		return true
 	end
 
-	function _s.set(defaults)
+	function _s.set(defaults, inject, noClean)
 		local cm = u.returnIfValid(_s.isModuleValid, PUG.currentModule)
 		local module = (cm and cm.data.settings) or {}
+		local hooks = {}
+
 		assert(defaults ~= nil, "Default data values must be passed.")
 
 		-- Cleanup unused keys.
-		for k, _ in next, module do
-			if defaults[ k ] == nil then
-				module[ k ] = nil
+		if noClean ~= true then
+			for k, _ in next, module do
+				if defaults[ k ] == nil then
+					module[ k ] = nil
+				end
 			end
 		end
 
@@ -287,6 +291,13 @@ do
 			module = table.Merge(defaults, module)
 		end
 
+		if istable(inject) then
+			assert(isstring(inject[1]), "Expected string table at variable 2.")
+			for k, v in next, inject do
+				module, hooks = _s.merge(module, hooks, v)
+			end
+		end
+
 		local hasFolders = false
 		local binding = {}
 		for k, v in next, module do
@@ -294,23 +305,22 @@ do
 				hasFolders = true
 				for kk, vv in next, v do
 					if kk ~= 0 then
-						binding[k] = {}
-						binding[k][kk] = vv.v
+						binding[k] = { [kk] = vv.v }
 					end
 				end
 			end
 		end
 
-		if hasFolders then
-			module = _s.bind(binding, module)
-		end
-
-		return module
+		return module, hooks
 	end
 
 	function _s.bind(bindTo, bindFrom)
 		bindTo[0] = bindFrom
-		return setmetatable(bindTo, {__index = bindTo[0]})
+		bindTo = table.Merge(bindTo, bindFrom)
+
+		PrintTable(bindTo)
+
+		return bindTo -- No meta needed, table merged.
 	end
 
 	function _s.release(hooks, timers, settings)
@@ -331,12 +341,14 @@ do
 
 		local path = stringFormat("%s/%s/%s", dirs.modules, cm.key, path)
 		local data = include(path)
+		
 		table.Merge(settings, data.settings)
 		table.Merge(hooks, data.hooks)
+
 		path = nil
 		data = nil
 
-		return settings
+		return settings, hooks
 	end
 
 	function _s.folder(settings, inherit)
