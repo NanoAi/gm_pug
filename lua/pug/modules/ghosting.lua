@@ -23,7 +23,7 @@ local _s, hooks = u.settings.set({
 _s = u.settings.bind({
 	tryUnGhostTimer = _s.tryUnGhostTimer > 0 and _s.tryUnGhostTimer / 100 or 0,
 	ghostHugeScale = math.pow(10, _s.ghostHugeScale),
-}, _s)
+}, _s, false)
 
 u.addHook("PUG.SetCollisionGroup", "Collision", function( ent, group )
 	if not _s.groupOverride then

@@ -103,21 +103,21 @@ local function makeLayeredSet(root, keys, value, fallback)
 		root = fallback.folder.contents
 	end
 
-	root[0] = root
 	for i = 2, count do
 		if i == count then
 			local ref = root[keys[i]]
 			if ref.v ~= nil then
-				root[keys[i]].v = value or ref.v
+				if value == nil then -- If we don't have a value get it from ref.
+					root[keys[i]].v = ref.v
+				else
+					root[keys[i]].v = value
+				end
 				break
 			end
 			error("This should never happen. Please, report this issue.")
 		end
-		-- root[0][keys[i]] = {}
-		-- root[0] = root[0][keys[i]]
 	end
 
-	root[0] = nil
 	return root
 end
 

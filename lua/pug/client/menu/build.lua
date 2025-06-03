@@ -103,6 +103,7 @@ local function showSettings( data, len, decompress )
 							PGM.typeBuilder["boolean"](node, folders[folder][0])
 							PGM.setOptionData(folders[folder][0], path, data.v)
 							node.folder = {name = kk, contents = vv}
+							folders[folder][0]:UpdateOption(data.v) -- Update after setting.
 						else
 							local folderNode = folders[folder][opt]
 							folderNode = folders[folder][0]:AddNode(l(opt))

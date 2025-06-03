@@ -97,11 +97,6 @@ net.Receive("pug.send", function( len, ply )
 
 		local readFile = file.Read( "pug_settings.json", "DATA" )
 		if readFile and readFile ~= "" then
-
-			print("[DEBUG] SENDING DATA...")
-			PrintTable(util.JSONToTable( readFile ))
-			print("=======\n\n")
-
 			local data = util.Compress( readFile )
 			net.Start("pug.send")
 			net.WriteData( data, #data )

@@ -278,6 +278,7 @@ do
 
 		-- Cleanup unused keys.
 		if noClean ~= true then
+			module[0] = nil -- Explicitly clear [0].
 			for k, _ in next, module do
 				if defaults[ k ] == nil then
 					module[ k ] = nil
@@ -298,33 +299,47 @@ do
 			end
 		end
 
-		local hasFolders = false
-		local binding = {}
+		local binder = {}
 		for k, v in next, module do
 			if v and istable(v) and v[0] == "folder" then
-				hasFolders = true
 				for kk, vv in next, v do
 					if kk ~= 0 then
-						binding[k] = { [kk] = vv.v }
+						binder[k] = binder[k] or {}
+						binder[k][kk] = vv.v
 					end
 				end
 			end
 		end
 
+		if next(binder) then -- Only bind if we have values.
+			module = _s.bind(binder, module, true)
+		end
+
 		return module, hooks
 	end
 
-	function _s.bind(bindTo, bindFrom)
-		bindTo[0] = bindFrom
-		bindTo = table.Merge(bindTo, bindFrom)
-
-		PrintTable(bindTo)
-
-		return bindTo -- No meta needed, table merged.
+	function _s.bind(binder, module, write)
+		local inst = {}
+		for k, v in next, module do
+			if k ~= 0 then
+				inst[k] = v
+			end
+		end
+		-- Inject bound values, ignore key 0.
+		for k, v in next, binder do
+			if k ~= 0 then
+				module[k] = v
+			end
+		end
+		-- Set the original values.
+		if write == true then
+			module[0] = inst
+		end
+		return module
 	end
 
 	function _s.release(hooks, timers, settings)
-		if settings[0] then
+		if istable(settings[0]) then
 			settings = settings[0]
 			settings[0] = nil
 		end
@@ -345,9 +360,6 @@ do
 		table.Merge(settings, data.settings)
 		table.Merge(hooks, data.hooks)
 
-		path = nil
-		data = nil
-
 		return settings, hooks
 	end
 
@@ -360,7 +372,6 @@ do
 		end
 		return settings
 	end
-
 	u.settings = _s
 end
 
