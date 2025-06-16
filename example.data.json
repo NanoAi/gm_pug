@@ -1,0 +1,87 @@
+{
+  "collisions": {
+    "data": [],
+    "enabled": false
+  },
+  "tools": {
+    "data": [],
+    "enabled": false
+  },
+  "physgun": {
+    "data": [],
+    "enabled": false
+  },
+  "physics": {
+    "data": [],
+    "enabled": false
+  },
+  "ghosting": {
+    "data": {
+      "settings": {
+        "exposeGhoster": false,
+        "ghostOnSpawn": true,
+        "ghostColour": {
+          "0": "colour",
+          "r": 4,
+          "b": 36,
+          "a": 250,
+          "g": 20
+        },
+        "groupOverride": false,
+        "ghostNoCollide": false,
+        "ghostSetPos": true,
+        "ghostHugeOnSpawn": false,
+        "sleepOnUnGhost": true,
+        "ghostHugeScale": 5.85,
+        "tryUnGhostOnSpawn": true,
+        "tryUnGhostTimer": 5,
+        "expensive": {
+          "0": "folder",
+          "buster": {
+            "0": "folder",
+            "inherit": false,
+            "v": {
+              "0": "folder",
+              "count": {
+                "inherit": false,
+                "v": 1
+              },
+              "enabled": {
+                "inherit": true,
+                "v": false
+              }
+            }
+          },
+          "oob": {
+            "0": "folder",
+            "inherit": false,
+            "v": {
+              "0": "folder",
+              "clock": {
+                "inherit": false,
+                "v": 2
+              },
+              "count": {
+                "inherit": false,
+                "v": 5
+              },
+              "useTrace": {
+                "inherit": false,
+                "v": false
+              },
+              "enabled": {
+                "inherit": true,
+                "v": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "enabled": true
+  },
+  "stacks": {
+    "data": [],
+    "enabled": false
+  }
+}
