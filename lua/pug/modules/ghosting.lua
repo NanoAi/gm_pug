@@ -6,7 +6,7 @@ local cw = constraint.Weld
 local ErrorNoHaltWithStack = ErrorNoHaltWithStack
 
 local _s, hooks = u.settings.set({
-	ghostColour = {4, 20, 36, 250},
+	ghostColour = u.colour({4, 20, 36, 250}),
 	ghostSetPos = true,
 	ghostOnSpawn = true,
 	ghostHugeOnSpawn = false,
@@ -17,8 +17,8 @@ local _s, hooks = u.settings.set({
 	tryUnGhostTimer = 5, -- Modified via `u.settings.bind`.
 	sleepOnUnGhost = true,
 	exposeGhoster = false,
-	buster = {},
-}, {"ghost_buster.lua"}, false)
+	expensive = {},
+}, {"expensive.lua"}, false)
 
 _s = u.settings.bind({
 	tryUnGhostTimer = _s.tryUnGhostTimer > 0 and _s.tryUnGhostTimer / 100 or 0,
@@ -162,7 +162,7 @@ function PUG:Ghost( ent )
 
 		ghostCollision(ent)
 
-		ent:SetColor( Color( unpack( _s.ghostColour ) ) )
+		ent:SetColor( _s.ghostColour )
 		ent:SetMaterial("models/debug/debugwhite")
 		ent.PUGGhost.Memory = {}
 		ent.PUGGhosted = 2
@@ -380,4 +380,8 @@ u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
 end, hooks)
 
 _G.PUG = PUG -- Pass to global.
-return u.settings.release(hooks, nil, _s)
+
+local x = u.settings.release(hooks, nil, _s)
+PrintTable(x)
+
+return x

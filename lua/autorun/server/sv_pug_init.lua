@@ -7,7 +7,7 @@ local conDesc = "Set PUGs current language, falls back to default."
 
 AddCSLuaFile("pug/cl_pug.lua")
 AddCSLuaFile("pug/client/menu/menu.lua")
-AddCSLuaFile("pug/client/menu/build.lua")
+AddCSLuaFile("pug/client/menu/util.lua")
 AddCSLuaFile("pug/client/rndx.lua")
 AddCSLuaFile("pug/client/language.lua")
 CreateConVar("pug_lang", "en", FCVAR_ARCHIVE, conDesc)

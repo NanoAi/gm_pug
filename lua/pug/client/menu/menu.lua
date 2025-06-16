@@ -1,381 +1,349 @@
-local unpack = unpack
-local type = type
-local istable = istable
-local tostring = tostring
-local ErrorNoHaltWithStack = ErrorNoHaltWithStack
+local addNotification = notification.AddLegacy
 local langGetPhrase = language.GetPhrase
-local string = string
+local istable = istable
 
-local strEmpty = ""
-local optionParser = {}
-local pgm = {}
-pgm.typeBuilder = {
-	_i = {
-		TextEntry = false,
-	}
-}
+-- Include Externals
+local lang = include("pug/client/language.lua")
+local RNDX = include("pug/client/rndx.lua")
+local PUGUtil = include("pug/client/menu/util.lua")
+local emptyFunc = function() end
+local emptyStr = ""
+local l = PUGUtil.l
+-- END --
 
-pgm.rawData = {}
-pgm.options = {}
-pgm.RNDX = {}
+PUGUtil.declare("RNDX", RNDX)
 
-local function unpackColour(c)
-	return unpack({c.r, c.g, c.b, c.a})
-end
-
-function pgm.l( str, describe )
-	local key = describe and "vd" or "v"
-	local re = langGetPhrase( string.format("pug_%s.%s", key, str) )
-	if string.sub(re, 1, 4) == "pug_" then
-		return (key == "vd" and "No description available.") or str
-	end
-	return re
-end
-
-pgm.Commands = {
-	["clear"] = function(panel, d)
-		panel:CommandGo(nil, "npc/turret_floor/click1.wav", false)
-		d.console:SetText(strEmpty)
-		d.console:InsertColorChange(unpackColour(color_white))
-		return true
-	end,
-	["send"] = function(panel, d)
-		pgm.netSendSettings()
-		panel:CommandGo("Sending Data to Server...", nil, false)
-		return true
-	end,
-	["get"] = function(panel, d)
-		pgm.netRequestSettings()
-		panel:CommandGo("Updating Data...", nil, false)
-		return true
-	end,
-	["clean"] = function(panel, d)
-		-- Request Cleanup from server.
-		panel:CommandGo("Cleaning Server...", nil, false)
-		net.Start("pug.cleanup.request")
-		net.WriteInt(d.args[2], 5)
-		net.SendToServer()
-		return true
-	end,
-}
-
-setmetatable(pgm.Commands, {
-	__index = function(data, key)
-		return (function() return false end)
-	end,
-})
-
-local truthyStr = {
-	["on"] = true,
-	["off"] = false,
-	["yes"] = true,
-	["no"] = false,
-	["true"] = true,
-	["false"] = false,
-	["e"] = true,
-	["d"] = false,
-	["y"] = true,
-	["n"] = false,
-	["1"] = true,
-	["0"] = false,
-	["t"] = true,
-	["f"] = false,
-}
-function pgm.keyAsBool( any )
-	local key = string.lower(tostring(any))
-	local get = truthyStr[key]
-	if get == nil then
-		key = string.sub(key, 1, 1)
-		get = truthyStr[key]
-	end
-	return get
-end
-
-local function makeLayeredSet(root, keys, value, fallback)
-	local count = #keys
-
-	if count == 1 then
-		root = value
-		return root
-	end
-
-	if not ispanel(root) then
-		root = fallback.folder.contents
-	end
-
-	for i = 2, count do
-		if i == count then
-			local ref = root[keys[i]]
-			if ref.v ~= nil then
-				if value == nil then -- If we don't have a value get it from ref.
-					root[keys[i]].v = ref.v
-				else
-					root[keys[i]].v = value
-				end
-				break
-			end
-			error("This should never happen. Please, report this issue.")
-		end
-	end
-
-	return root
-end
-
-function pgm.finalize()
-	for _, opt in next, optionParser do
-		local keys = {}
-		local node = opt.inferredParent
-		local default = { settings = {}, parent = node }
-		if node ~= nil then
-			for key in string.gmatch(opt.path, "([^/]+)") do
-				table.insert(keys, key)
-			end
-			
-			if #keys == 0 then
-				keys[1] = opt.path
-			end
-
-			pgm.options[ node.key ] = pgm.options[ node.key ] or default
-
-			local root = pgm.options[ node.key ].settings[ keys[1] ]
-			pgm.options[ node.key ].settings[ keys[1] ] = makeLayeredSet(root, keys, nil, node)
-		end
-	end
-	optionParser = {} -- cleanup
-end
-
-function pgm.setupButton(x, y, width, height, button, src, colours, flags, noBackground, setOffset)
-	colours = colours or {
+local PUGMenu = PUGUtil.setupMenu({
+  frames = {
+		parent = {},
+		children = {},
+	},
+  data = {},
+  cache = {
+    sound = Sound("pug/breath.mp3"),
+		upload = Material( "pug/icons/send_small.png", "smooth" ),
+		download = Material( "pug/icons/request_small.png", "smooth" ),
+		icon = Material( "materials/pug/x256.png", "smooth" ),
+  },
+	svPhysFrames = {},
+	clFrameTime = {},
+	buttonColours = {
 		base = Color(60, 60, 60, 255),
 		click = Color(80, 80, 80, 255),
 		image = Color(255, 255, 255, 255),
 		imageClick = Color(125, 125, 125, 255),
 	}
-
-	noBackground = noBackground or false
-	setOffset = setOffset or 3
-
-  local RNDX = pgm.RNDX
-
-  button.colours = colours
-  button.__test = true
-
-  function button:Paint(w, h)
-		local offset = 0
-		local colours = {
-			base = self.colours.base,
-			image = self.colours.image,
-		}
-
-		if self.clicked then
-			colours.base = self.colours.click
-			colours.image = self.colours.imageClick
-			offset = setOffset
-		end
-
-		if not noBackground then
-			RNDX.Draw(8, 0, 4, w - 5, h - 4, colours.base, flags)
-		end
-		-- w/2 = 37.5, h * 0.75 = 37.5 | Rounding to 38.
-		RNDX.DrawMaterial(0, x, y + offset, width, height, colours.image, src, RNDX.SHAPE_FIGMA)
-	end
-
-	function button:Clicked()
-		self.clicked = true
-		timer.Simple(0.3, function()
-			self.clicked = false
-		end)
-	end
-end
-
-function pgm.netRequestSettings()
-	net.Start("pug.send")
-	net.SendToServer()
-end
-
-function pgm.netSendSettings()
-  if istable( pgm.rawData ) and next( pgm.rawData ) then
-    local sendData = util.TableToJSON( pgm.rawData )
-
-    if sendData and sendData ~= "" then
-      sendData = util.Compress( sendData )
-
-      net.Start("pug.take")
-      net.WriteData( sendData, #sendData )
-      net.SendToServer()
-
-      sendData = nil
-    end
-  end
-end
-
-function pgm.setDataValue(node, path, value)
-	local keys = {}
-	for key in string.gmatch(path, "([^/]+)") do
-		table.insert(keys, key)
-	end
-
-	if #keys == 0 then
-		keys[1] = path
-	end
-
-	local root = pgm.rawData[ node.key ].data.settings[ keys[1] ]
-	pgm.rawData[ node.key ].data.settings[ keys[1] ] = makeLayeredSet(root, keys, value, node)
-end
-
-function pgm.getDataValue(node, path)
-  local keys = {}
-  for key in string.gmatch(path, "([^/]+)") do
-    table.insert(keys, key)
-  end
-
-	local count = #keys
-  if count == 0 then
-    keys[1] = path
-		count = 1
-  end
-
-	local current = pgm.rawData[ node.key ].data.settings[ keys[1] ]
-	for i = 2, count do
-    if not istable(current) then
-      return current
-    end
-    if current[keys[i]] == nil then
-      break
-    end
-		current = current[keys[i]]
-  end
-
-  -- Handle special case: { inherit = boolean, v = any }
-  if istable(current) and isbool(current.inherit) and current.v ~= nil then
-    return current.v
-  end
-
-  return current
-end
-
-pgm.typeBuilder = {
-	["boolean"] = function(node, option)
-		if option.value then
-			option.Icon:SetImage( "icon16/accept.png" )
-		else
-			option.Icon:SetImage( "icon16/delete.png" )
-		end
-
-		function option:UpdateOption( enabled )
-			if enabled == nil then
-				enabled = pgm.getDataValue(node, self.path)
-			end
-			if enabled then
-				self.Icon:SetImage( "icon16/accept.png" )
-			else
-				self.Icon:SetImage( "icon16/delete.png" )
-			end
-			pgm.setDataValue(node, self.path, enabled)
-		end
-
-		function option:DoClick()
-			local enabled = pgm.getDataValue(node, self.path)
-			self:UpdateOption(not enabled)
-		end
-		return true
-	end,
-	["folder"] = function(node, option)
-		option.Icon:SetImage("icon16/folder.png")
-		return true
-	end,
-	["textfield"] = {
-		[0] = function(node, option)
-			option.Icon:SetImage( "icon16/textfield_rename.png" )
-
-			if type( option.value ) == "table" then
-				option.value = table.concat( option.value, ", " )
-			end
-
-			local TextEntry = vgui.Create( "DTextEntry", option )
-			TextEntry:Dock( RIGHT )
-			TextEntry:SetText( tostring( option.value ) )
-			TextEntry:SetWide( 100 )
-
-			function TextEntry:OnChange()
-				option.Icon:SetImage( "icon16/textfield_rename.png" )
-			end
-
-			function TextEntry:UpdateOption()
-				local entry = pgm.getDataValue(node, option.path)
-
-				if istable(entry) and entry.v then
-					entry = entry.v
-				end
-
-				self:SetText(entry)
-				self:SaveEntry(entry)
-			end
-			
-			function TextEntry:SaveEntry(entry)
-				option.Icon:SetImage( "icon16/disk.png" )
-				pgm.setDataValue(node, option.path, entry)
-			end
-
-			pgm.typeBuilder._TextEntry = TextEntry
-			option.child = TextEntry
-
-			local entry = pgm.getDataValue(node, option.path)
-			pgm.typeBuilder["textfield"][option.type](entry)
-		end,
-		["table"] = function(entry)
-			local i = pgm.typeBuilder._TextEntry
-			function i:OnEnter()
-				local new = {}
-				self:GetValue():gsub('[0-9]+', function(n)
-					table.insert( new, tonumber( n ) )
-				end)
-				entry = new
-				self:SaveEntry(entry)
-			end
-		end,
-		["number"] = function(entry)
-			local i = pgm.typeBuilder._TextEntry
-			function i:OnEnter()
-				self:GetValue():gsub('[0-9]+', function(n)
-					entry = tonumber( n )
-				end)
-				self:SaveEntry(entry)
-			end
-		end,
-		["string"] = function(entry)
-			local i = pgm.typeBuilder._TextEntry
-			function i:OnEnter()
-				entry = self:GetValue()
-				self:SaveEntry(entry)
-			end
-		end,
-	},
-}
-
-setmetatable(pgm.typeBuilder, {
-	__index = function(data, key)
-		return (function() return false end)
-	end,
 })
 
-function pgm.setOptionData(option, path, value)
-	option.path = path
-	option.value = value
-	option.type = type( value )
-	optionParser[#optionParser + 1] = option
-	return option
-end
+PUGUtil.declare("PUGMenu", PUGMenu)
 
-function pgm.addNodeOption(node, option)
-	if option ~= nil then
-		option.inferredParent = node
-		if not pgm.typeBuilder[option.type](node, option) then
-			pgm.typeBuilder["textfield"][0](node, option)
+local function buildOption(sheet, settings, scroller)
+	if not istable(settings) then return end -- Ensure that it's a table.
+
+	local flip = false
+	local flipper = 0
+	local parent = sheet.Panel
+	local memory = settings[0]
+
+	if not scroller then
+		flip = true
+	end
+
+	settings[0] = nil
+	for k, v in next, settings do
+		local check = istable(v)
+		local inherit = check and v.inherit or false
+		if check and v.v ~= nil then
+			v = v.v -- If a child `v` exists inherit it as the value.
+		end
+
+		local vType = PUGUtil.type(v)
+
+		if flip then
+			flipper = flipper < 3 and (flipper + 1) or 0
+			scroller = parent.Scroll[(flipper % 2) + 1]
+		end
+
+		if inherit and vType == "table" then
+			PUGUtil.newToggleLine(scroller, v)
+		else
+			local container = vgui.Create("DCollapsibleCategory", scroller)
+			container:SetLabel(l(k))
+			container:SetExpanded(true)
+			container:Dock(TOP)
+			container:DockMargin(3, 3, 3, 7)
+			container:DockPadding(3, 3, 3, 7)
+			if vType == "folder" then
+				buildOption(sheet, v, container)
+			else
+				-- Add value controller here.
+				PUGUtil.newPanelByType(vType, v, container, k)
+				local btn = PUGUtil.dCornerButton(container.Header, 0, 0, 20, 20)
+				btn:SetText(emptyStr)
+				btn:SetRelative({x = 1, ym = 0}, false, true, false)
+				PUGUtil.hookTooltip(btn, l(k, true))
+			end
+		end
+	end
+	settings[0] = memory
+
+	if istable(scroller) then
+		for i = 1, 3 do
+			scroller[i]:InvalidateLayout()
 		end
 	else
-		ErrorNoHaltWithStack("Attempt to index local 'option' (a nil value).")
+		scroller:InvalidateLayout()
 	end
 end
 
-return pgm
+local function showSettings( data )
+	local rFlags = RNDX.NO_TR + RNDX.NO_BR + RNDX.SHAPE_FIGMA
+  PUGMenu.data = util.JSONToTable( data )
+	data = PUGMenu.data
+	
+	-- DColumnSheet
+	local options = PUGMenu:GetChildren().options
+	options:ClearSheets()
+
+	-- PrintTable(data)
+
+  for k, v in next, data do
+		local p = vgui.Create( "DPanel", options )
+		p:Dock( FILL )
+		
+		PUGUtil.newToggleLine(p, v) -- Main Activation Toggle.
+		local sheet = options:AddSheet(k, p)
+
+		local main = vgui.Create("DScrollPanel", sheet.Panel, "Main")
+		main:Dock(FILL)
+
+		local panels = {
+			[1] = vgui.Create("DPanel", main, "Left"),
+			[2] = vgui.Create("DPanel", main, "Right"),
+			[3] = main,
+		}
+
+		for i = 1, 3 do
+			panels[i]:SetPaintBackground(false)
+		end
+
+		local o = main.PerformLayout
+		function main:PerformLayout(w, h)
+			local hw = w / 2 -- Half Width
+			for i = 0, 1 do
+				local x = i + 1
+				local panel = panels[x]
+				panel:SetPos(hw * i, 0)
+				panel:SetSize(hw - (i * 10), h)
+				panel:SizeToChildren(false, true)
+				function panel:PerformLayout(w, h)
+					self:SizeToChildren(false, true)
+				end
+			end
+			return o(self, w, h)
+		end
+		sheet.Panel.Scroll = panels
+
+		function sheet.Button:Paint(w, h)
+			if self:GetToggle() then
+				RNDX.Draw(8, 0, 0, w, h, Color(50, 50, 50, 150), rFlags)
+			else
+				RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 200), rFlags)
+			end
+			if v.enabled then
+				surface.SetDrawColor(Color(0, 255, 0, 100))
+				surface.DrawRect(5, h/4, 2, h/2)
+			else
+				surface.SetDrawColor(Color(255, 0, 0, 100))
+				surface.DrawRect(5, h/4, 2, h/2)
+			end
+		end
+	
+		buildOption(sheet, v.data.settings, nil)
+  end
+end
+
+local function buildFrame()
+	local frame = PUGMenu.frames.parent
+
+  frame = vgui.Create( "DFrame" )
+	frame:SetDeleteOnClose( false )
+	frame:SetTitle( "Physics \"UnGriefer\" Settings" )
+	frame:SetSize(800, 500)
+	frame:Center()
+	frame:Hide()
+
+	function frame:PerformLayout(w, h)
+		self.flags = RNDX.SHAPE_IOS
+		self.width = w
+		self.height = h
+
+		function self.btnClose:Paint(w, h)
+			RNDX.DrawCircle(w/2, (h/2) + 3, h * 0.75, Color(186, 29, 60, 250))
+		end
+
+		if self.btnMaxim then
+			self.btnMaxim:Remove()
+			self.btnMinim:Remove()
+		end
+	end
+
+	function frame:OnClose()
+		net.Start("pug.menu.close")
+		net.SendToServer()
+	end
+
+	function frame:Paint(w, h)
+    RNDX.Draw(8, 0, 0, w, h, nil, self.flags + RNDX.BLUR)
+    RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 150), self.flags)
+	end
+
+  local p = PUGMenu:CreateChild("DPanel")
+	p:Dock(FILL)
+	
+	local main = vgui.Create("DColumnSheet", frame)
+	main = PUGUtil.dColumnSheet(main, 100, frame:GetTall() / 10.2)
+	PUGMenu.frames.children.options = main
+	main:Dock(FILL)
+	main:DockMargin(0, 0, 0, 75)
+	local loader = main:AddSheet("Loading...", p)
+	function loader.Panel:PerformLayout()
+		-- Request server data when the menu loads.
+		net.Start("pug.send")
+		net.SendToServer()
+	end
+
+	-- Graph
+	p = PUGMenu:CreateChild("DPanel", frame)
+	p.key = 0
+
+	function p:PerformLayout()
+		self:SetPos(125, frame.height - 125)
+		self:SetSize(175, 70)
+	end
+
+	function p:Paint(w, h)
+		self.key = (self.key % 175) + 1
+
+		local clft = PUGMenu.clFrameTime
+		local svpt = PUGMenu.svPhysFrames
+
+		local len = #svpt
+		local o = h - 10
+
+		clft[self.key] = math.min(math.floor(engine.ServerFrameTime() * 1000), o)
+		RNDX.Draw(8, 0, 0, w, h, Color(43, 38, 38, 150), frame.flags)
+
+		if svpt and len > 2 then
+			for i = 1, len - 1 do
+				local n = i + 1
+				if clft and clft[n] then
+					surface.SetDrawColor(0, 255, 255, 255)
+					surface.DrawLine(i - 1, o - clft[i], i, o - clft[n])
+				end
+				surface.SetDrawColor(255, 0, 0, 200)
+				surface.DrawLine(i - 1, o - svpt[i], i, o - svpt[n])
+			end
+		end
+	end
+
+	p = vgui.Create("DButton", frame)
+	p:SetText( emptyStr )
+	p:SetPos(5, 500 - 128)
+	p:SetSize(128, 128)
+	PUGUtil.setupButton(0, 0, 127, 127, p, PUGMenu.cache.icon, nil, nil, true, -3)
+	function p:DoClick()
+		self:Clicked()
+		surface.PlaySound("UI/buttonclick.wav")
+		surface.PlaySound(PUGMenu.cache.sound)
+	end
+
+	local cmd = vgui.Create("DPanel", frame)
+	cmd:SetPaintBackground( false )
+	cmd:SetSize( 800, 50 )
+	cmd:Dock( BOTTOM )
+
+	p = vgui.Create( "DButton", cmd )
+	p:SetText( emptyStr )
+	p:SetTooltip("Request Data")
+	p:SetSize(75, 27)
+	p:Dock( RIGHT )
+	p:DockMargin( 0, 0, 5, 0 )
+
+	PUGUtil.setupButton(18.75, 9, 38, 38, p, PUGMenu.cache.download, PUGMenu.buttonColours, frame.flags)
+	function p:DoClick()
+		self:Clicked()
+		net.Start("pug.send")
+		net.SendToServer()
+	end
+
+	p = vgui.Create( "DButton", cmd )
+	p:SetText( emptyStr )
+	p:SetTooltip("Send Data")
+	p:SetSize(75, 25)
+	p:Dock( RIGHT )
+	PUGUtil.setupButton(18.75, 9, 38, 38, p, PUGMenu.cache.upload, PUGMenu.buttonColours, frame.flags)
+	function p:DoClick()
+		self:Clicked()
+		PUGUtil.netSendSettings(PUGMenu.data)
+		-- Send Settings Here.
+	end
+
+	return PUGMenu:SetFrame(frame)
+end
+
+local function openFrame()
+	local frame = PUGMenu:GetFrame()
+	if not frame.IsVisible then
+		frame = buildFrame()
+		print('[PUG:Warn] Frame Not Found Recreating.')
+	end
+	if not frame:IsVisible() then
+		frame:Show()
+		frame:MakePopup()
+	end
+end
+
+-- ! Networking Section
+
+net.Receive("pug.menu", openFrame)
+net.Receive("pug.send", function( len )
+	showSettings( util.Decompress( net.ReadData( len ), len ) )
+end)
+
+CreateConVar("pug_cl_enabled", "1", FCVAR_ARCHIVE, lang.notificationToggle, 0, 1)
+
+local notifyDelay = 0
+net.Receive("pug.notify", function()
+	if not GetConVar( "pug_cl_enabled" ):GetBool() then
+		return
+	end
+
+	if notifyDelay > CurTime() then
+		return
+	end
+
+	local str, type, length = net.ReadString(), net.ReadInt(4), net.ReadInt(4)
+	str = langGetPhrase( str ) or str
+
+	notification.AddLegacy( str, type, length )
+	print( "NOTIFY: ", str )
+
+	notifyDelay = CurTime() + (length * 0.45)
+end)
+
+do
+	local k = 0
+	net.Receive("pug.PhysicsPing", function( len )
+		k = (k % 175) + 1
+		PUGMenu.svPhysFrames[k] = net.ReadUInt(7)
+	end)
+end
+
+concommand.Add("pug_cl_menu", openFrame, nil, "Open the menu for PUG.")
+concommand.Add("pug_cl_dump", function()
+	print(PUGMenu.data)
+	if istable(PUGMenu.data) then
+		PrintTable(PUGMenu.data)
+	end
+end, nil, "Dump the currently loaded data set for PUG.")

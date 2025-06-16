@@ -1,1 +1,1 @@
-include("pug/client/menu/build.lua")
+include("pug/client/menu/menu.lua")

@@ -37,8 +37,7 @@ local function printPlayer(ply)
 	print("---")
 end
 
-concommand.Add("pug", function( ply, cmd )
-	if cmd ~= "pug" then return end
+concommand.Add("pug_cl_menu", function( ply, cmd )
 	if IsValid( ply ) and ply:IsSuperAdmin() then
 		openMenu( ply )
 	end
@@ -164,9 +163,6 @@ net.Receive("pug.take", function( len, ply )
 
 		if data then
 			data = util.Decompress( data, len )
-
-			print("[DEBUG]", data)
-			print("[DEBUG] 11111111111111")
 
 			local msg = "PUG Settings Updated "
 			msg = msg .. "by " .. steamid .. "!"

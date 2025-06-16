@@ -11,6 +11,7 @@ local type = type
 local stringFormat = string.format
 local physTime = physenv.GetLastSimulationTime
 local vecZero = Vector(0, 0, 0)
+local Color = Color
 
 local u = {}
 
@@ -259,8 +260,51 @@ function u.returnIfValid(validator, input)
 	return nil
 end
 
+function u.colour(colour)
+	local col = {}
+	if colour[1] and colour[2] and colour[3] and colour[4] then
+		col = Color(colour[1], colour[2], colour[3], colour[4])
+	end
+	if not next(col) then
+		col[0] = "colour"
+		return col
+	end
+	if colour.r and colour.g and colour.b then
+		col = Color(colour.r, colour.g, colour.b, colour.a)
+	end
+	col = col or Color(255, 0, 255, 255)
+	col[0] = "colour"
+	return col
+end
+
 do
 	local _s = {}
+
+	local function binderUtil(source, target)
+		for k, v in next, source do
+			if k ~= 0 then
+				-- if istable(v) then PrintTable(v) end
+				if istable(v) and v[0] == "folder" then
+					target[k] = target[k] or {}
+					binderUtil(v.v, target[k])
+				else
+					target[k] = v.v
+				end
+			end
+		end
+	end
+
+	local function createSetBinder(module)
+		local binder = {}
+		for k, v in next, module do
+			if istable(v) and v[0] == "folder" then
+				binder[k] = binder[k] or {}
+				binderUtil(v, binder[k])
+			end
+		end
+		return binder
+	end
+
 	function _s.isModuleValid(module)
 		if not module then return false end
 		if module.data == nil then return false end
@@ -299,18 +343,7 @@ do
 			end
 		end
 
-		local binder = {}
-		for k, v in next, module do
-			if v and istable(v) and v[0] == "folder" then
-				for kk, vv in next, v do
-					if kk ~= 0 then
-						binder[k] = binder[k] or {}
-						binder[k][kk] = vv.v
-					end
-				end
-			end
-		end
-
+		local binder = createSetBinder(module)
 		if next(binder) then -- Only bind if we have values.
 			module = _s.bind(binder, module, true)
 		end
@@ -367,7 +400,11 @@ do
 		settings[0] = "folder"
 		for k, v in next, settings do
 			if k ~= 0 then
-				settings[k] = { v = v, inherit = (inherit == k) }
+				settings[k] = { 
+					v = v, 
+					inherit = (inherit == k),
+					[0] = istable(v) and v[0] or nil,
+				}
 			end
 		end
 		return settings
@@ -442,6 +479,7 @@ do
 		if isHook then
 			hook.Add(callID, id, callback)
 		else
+			print(id, delay, reps, callback)
 			timer.Create(id, delay, reps, callback)
 		end
 
