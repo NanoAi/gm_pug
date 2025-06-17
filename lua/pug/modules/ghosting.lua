@@ -380,8 +380,4 @@ u.addHook("PUG.FadingDoorToggle", "FadingDoor", function(ent, isFading, ply)
 end, hooks)
 
 _G.PUG = PUG -- Pass to global.
-
-local x = u.settings.release(hooks, nil, _s)
-PrintTable(x)
-
-return x
+return u.settings.release(hooks, nil, _s)

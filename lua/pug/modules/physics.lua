@@ -11,7 +11,8 @@ local _s = u.settings.set({
 	sleepOnDamage = false,
 	setPlayerHack = false,
 	turboPhysics = false,
-})
+	expensive = {},
+}, {"expensive.lua"}, false)
 
 local function applyPlayerHack(ply)
 	if not _s.setPlayerHack then return end

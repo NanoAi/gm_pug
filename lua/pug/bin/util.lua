@@ -456,10 +456,9 @@ do
 		id = stringFormat("PUG.%s.%s", _module, id)
 
 		if remCond ~= nil then
-			if isbool(remCond) and (not remCond) then
+			if isbool(remCond) and remCond == false then
 				halt = true
-			end
-			if isfunction(removeCondition) and removeCondition() then
+			elseif isfunction(removeCondition) and removeCondition() then
 				halt = true
 			end
 		end
@@ -479,7 +478,6 @@ do
 		if isHook then
 			hook.Add(callID, id, callback)
 		else
-			print(id, delay, reps, callback)
 			timer.Create(id, delay, reps, callback)
 		end
 
@@ -508,8 +506,8 @@ do
 
 	-- Add a hook to PUG so that it can be removed when the module is unloaded.
 	-- string, string, function, table, boolean|function
-	function u.addHook(callID, id, callback, store, remCond)
-		return addCall(callID, id, nil, nil, callback, store, remCond, true)
+	function u.addHook(callID, id, callback, store, cond)
+		return addCall(callID, id, nil, nil, callback, store, cond, true)
 	end
 
 	---Remove a Timer added to PUG
@@ -523,7 +521,7 @@ do
 	-- Adds a timer to PUG.
 	-- string, number, number, function, table, boolean|function
 	function u.addTimer(timerID, delay, reps, callback, store, cond)
-		return addCall(nil, timerID, delay, reps, callback, store, remCond, false)
+		return addCall(nil, timerID, delay, reps, callback, store, cond, false)
 	end
 
 	function u.getHookID(id)

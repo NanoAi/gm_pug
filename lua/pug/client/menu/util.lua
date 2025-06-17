@@ -318,7 +318,7 @@ local function setInMemoryTable(key, keyPath, value)
 	end
 end
 
-function typedPanels:number(v, container, key)
+function typedPanels:number(v, container, key, keyPath)
 	local panel = vgui.Create("DPanel")
 	local option = vgui.Create("DNumberWang", panel)
 	option:SetMinMax(0, 100)
@@ -334,7 +334,7 @@ function typedPanels:number(v, container, key)
 		self.Down:SetSize(20, h/2)
 	end
 	function option:OnValueChanged()
-		v = self:GetValue()
+		setInMemoryTable(key, keyPath, self:GetValue())
 	end
 	
 	container:SetContents(panel)
@@ -354,7 +354,7 @@ function typedPanels:boolean(v, container, key, keyPath)
 	panel:InvalidateChildren()
 end
 
-function typedPanels:colour(v, container, key)
+function typedPanels:colour(v, container, key, keyPath)
 	local panel = vgui.Create("DPanel")
 	panel:Dock(FILL)
 	local option = vgui.Create( "DColorCombo", panel )
@@ -382,7 +382,7 @@ function typedPanels:colour(v, container, key)
 	panel:InvalidateChildren()
 end
 
-function typedPanels:string(v, container, key)
+function typedPanels:string(v, container, key, keyPath)
 	local panel = vgui.Create("DPanel")
 	local dEntry = vgui.Create("DTextEntry", panel)
 	dEntry:Dock(TOP)
