@@ -19,14 +19,19 @@ local _s = u.settings.set({
 	}),
 }, nil, true)
 
-PrintTable(_s)
+-- PrintTable(_s)
 
 local mod = _s.expensive
 local function rollbackPosition(ent)
 	if ent.PUG_OOB and ent.PUG_OOB.pos then
-		ent:SetPos( ent.PUG_OOB.pos )
-		ent:SetAngles( ent.PUG_OOB.ang )
-		return true
+		if util.IsInWorld(ent.PUG_OOB.pos) then
+			ent:SetPos( ent.PUG_OOB.pos )
+			ent:SetAngles( ent.PUG_OOB.ang )
+			return true
+		else
+			SafeRemoveEntity(ent)
+			return false
+		end
 	else
 		SafeRemoveEntity(ent)
 		return false
@@ -53,13 +58,14 @@ local timerSwitch = (mod.oob.enabled and mod.oob.useTrace)
 u.addTimer("OOBProcessor", mod.oob.clock, 0, function() 
 	local iter = 0
 	for _, ent in ents.Iterator() do
-		if IsValid(ent) then
+		if IsValid(ent) and ent.PUGBadEnt then
 			iter = iter + 1
 			local tr = util.TraceLine({
 				start = ent:LocalToWorld(ent:OBBMins()),
 				endpos = ent:LocalToWorld(ent:OBBMaxs()),
 				mask = MASK_NPCWORLDSTATIC,
 			})
+			print(ent, " [TRACE]", tr.HitWorld)
 			if not tr.HitWorld then
 				ent.PUG_OOB = {
 					pos = ent:GetPos(),
@@ -67,8 +73,8 @@ u.addTimer("OOBProcessor", mod.oob.clock, 0, function()
 				}
 			else
 				rollbackPosition(ent)
+				if (iter >= mod.oob.count) then break end
 			end
-			if (iter >= mod.oob.count) then break end
 		end
 	end
 end, timers, timerSwitch)
@@ -77,7 +83,7 @@ if not timerSwitch then
 	u.addTimer("OOBProcessor", mod.oob.clock, 0, function()
 		local iter = 0
 		for _, ent in ents.Iterator() do
-			if IsValid(ent) then
+			if IsValid(ent) and ent.PUGBadEnt then
 				iter = iter + 1
 				local pos = ent:GetPos()
 				if util.IsInWorld(pos) then
@@ -87,8 +93,8 @@ if not timerSwitch then
 					}
 				else
 					rollbackPosition(ent)
+					if (iter >= mod.oob.count) then break end
 				end
-				if (iter >= mod.oob.count) then break end
 			end
 		end
 	end, timers, mod.oob.enabled)

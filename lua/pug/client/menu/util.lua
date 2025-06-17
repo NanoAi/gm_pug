@@ -109,7 +109,7 @@ function u.newToggleLine(parent, v)
 	b:SetToggle(v.enabled)
 end
 
-function u.newToggleButton( parent )
+function u.newToggleButton( parent, value )
 	local RNDX = u.internal.RNDX
 	local PUGMenu = u.internal.PUGMenu
 	local b = vgui.Create("DButton", parent)
@@ -137,7 +137,7 @@ function u.newToggleButton( parent )
 			RNDX.Draw(8, wm, hm, ww, hh, Color(140, 10, 10, 90), RNDX.SHAPE_FIGMA)
 		end
 	end
-	b:SetToggle(true)
+	b:SetToggle(value)
 	return b
 end
 
@@ -302,6 +302,22 @@ end
 -- # Type defined panels.
 local typedPanels = {}
 
+local function setInMemoryTable(key, keyPath, value)
+	local data = PUGMenu.data[keyPath[0]].data.settings
+	for _, k in ipairs(keyPath) do
+		if istable(data[k]) and data[k].v ~= nil then
+			data = data[k].v
+		else
+			data = data[k]
+		end
+	end
+	if istable(data[key]) and data[key].v ~= nil then
+		data[key].v = value
+	else
+		data[key] = value
+	end
+end
+
 function typedPanels:number(v, container, key)
 	local panel = vgui.Create("DPanel")
 	local option = vgui.Create("DNumberWang", panel)
@@ -326,12 +342,12 @@ function typedPanels:number(v, container, key)
 	panel:InvalidateChildren()
 end
 
-function typedPanels:boolean(v, container, key)
+function typedPanels:boolean(v, container, key, keyPath)
 	local panel = vgui.Create("DPanel")
-	local btn = u.newToggleButton(panel)
+	local btn = u.newToggleButton(panel, v)
 	function btn:DoClick()
 		self:Toggle()
-		v = self:GetToggle() -- This doesn't seem to update the value in PUGMenu. !!!
+		setInMemoryTable(key, keyPath, self:GetToggle())
 	end
 	container:SetContents(panel)
 	panel:SetPaintBackground(false)
@@ -352,9 +368,14 @@ function typedPanels:colour(v, container, key)
 		self:SetSize(container:GetWide(), 200)
 	end
 	function option:OnValueChanged( newColour )
-		local x = u.internal.PUGMenu.data[key][0]
-		u.internal.PUGMenu.data[key] = newColour
-		u.internal.PUGMenu.data[key][0] = x
+		local colour = {
+			[0] = v,
+			r = newColour.r,
+			g = newColour.g,
+			b = newColour.b,
+			a = newColour.a,
+		}
+		setInMemoryTable(key, keyPath, colour)
 	end
 	container:SetContents(panel)
 	panel:SetPaintBackground(false)
@@ -368,17 +389,17 @@ function typedPanels:string(v, container, key)
 	function dEntry:OnEnter()
 		local value = self:GetValue()
 		chat.AddText("Value Set To: " .. value)
-		u.internal.PUGMenu.data[key] = value
+		setInMemoryTable(key, keyPath, value)
 	end
 	container:SetContents(panel)
 	panel:SetPaintBackground(false)
 	panel:InvalidateChildren()
 end
 -- # Panel Caller.
-function u.newPanelByType(panelType, v, container, key)
+function u.newPanelByType(panelType, v, container, key, keyPath)
 	local panel = typedPanels[panelType]
 	if panel ~= nil then
-		return panel(typedPanels, v, container, key)
+		return panel(typedPanels, v, container, key, keyPath)
 	end
 end
 

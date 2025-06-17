@@ -13,7 +13,7 @@ local l = PUGUtil.l
 
 PUGUtil.declare("RNDX", RNDX)
 
-local PUGMenu = PUGUtil.setupMenu({
+PUGMenu = PUGUtil.setupMenu({
   frames = {
 		parent = {},
 		children = {},
@@ -35,16 +35,16 @@ local PUGMenu = PUGUtil.setupMenu({
 	}
 })
 
-PUGUtil.declare("PUGMenu", PUGMenu)
-
-local function buildOption(sheet, settings, scroller)
+local function buildOption(module, sheet, settings, scroller, memPath)
 	if not istable(settings) then return end -- Ensure that it's a table.
+	memPath = memPath or {} -- Default value for keyPath.
 
 	local flip = false
 	local flipper = 0
 	local parent = sheet.Panel
 	local memory = settings[0]
 
+	-- Only main modules have scrollers so it's safe to set other effects there.
 	if not scroller then
 		flip = true
 	end
@@ -58,6 +58,12 @@ local function buildOption(sheet, settings, scroller)
 		end
 
 		local vType = PUGUtil.type(v)
+
+		local curPath = {}
+		for i = 1, #memPath do 
+			curPath[i] = memPath[i]
+		end
+		curPath[#curPath + 1] = k
 
 		if flip then
 			flipper = flipper < 3 and (flipper + 1) or 0
@@ -74,10 +80,11 @@ local function buildOption(sheet, settings, scroller)
 			container:DockMargin(3, 3, 3, 7)
 			container:DockPadding(3, 3, 3, 7)
 			if vType == "folder" then
-				buildOption(sheet, v, container)
+				buildOption(module, sheet, v, container, curPath)
 			else
 				-- Add value controller here.
-				PUGUtil.newPanelByType(vType, v, container, k)
+				local out = {[0] = module, unpack(curPath, 1, #curPath - 1)}
+				PUGUtil.newPanelByType(vType, v, container, k, out)
 				local btn = PUGUtil.dCornerButton(container.Header, 0, 0, 20, 20)
 				btn:SetText(emptyStr)
 				btn:SetRelative({x = 1, ym = 0}, false, true, false)
@@ -159,7 +166,7 @@ local function showSettings( data )
 			end
 		end
 	
-		buildOption(sheet, v.data.settings, nil)
+		buildOption(k, sheet, v.data.settings, nil)
   end
 end
 
