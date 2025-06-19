@@ -56,7 +56,7 @@ hook.Add( "Think", "PUG.PhysicsPing", function()
 	local rt = RealTime()
 	if rt > sendTime then
 		local users = {}
-		local t = math.min(math.ceil(physenv.GetLastSimulationTime() * 1000), 127)
+		local t = math.ceil(physenv.GetLastSimulationTime() * 1000)
 		sendTime = rt + timeInTicks(2)
 
 		for _, v in ipairs(playersInMenu) do

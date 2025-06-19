@@ -172,23 +172,29 @@ end
 
 local function buildFrame()
 	local frame = PUGMenu.frames.parent
+	local s = {w = ScrW() * 0.416, h = ScrH() * 0.463}
+	s.w = math.min(s.w, 800)
+	s.h = math.min(s.w, 500)
 
   frame = vgui.Create( "DFrame" )
 	frame:SetDeleteOnClose( false )
 	frame:SetTitle( "Physics \"UnGriefer\" Settings" )
-	frame:SetSize(800, 500)
+	frame:SetSize(s.w, s.h)
 	frame:Center()
 	frame:Hide()
 
+	frame.flags = RNDX.SHAPE_IOS
+	frame.width = s.w
+	frame.height = s.h
+
+	function frame.btnClose:Paint(w, h)
+		RNDX.DrawCircle(w/2, (h/2) + 3, h * 0.75, Color(186, 29, 60, 250))
+		RNDX.DrawCircleOutlined(w/2, (h/2) + 3, h * 0.75, Color(148, 31, 54, 250), 2)
+	end
+
 	function frame:PerformLayout(w, h)
-		self.flags = RNDX.SHAPE_IOS
 		self.width = w
 		self.height = h
-
-		function self.btnClose:Paint(w, h)
-			RNDX.DrawCircle(w/2, (h/2) + 3, h * 0.75, Color(186, 29, 60, 250))
-		end
-
 		if self.btnMaxim then
 			self.btnMaxim:Remove()
 			self.btnMinim:Remove()
@@ -204,6 +210,7 @@ local function buildFrame()
     RNDX.Draw(8, 0, 0, w, h, nil, self.flags + RNDX.BLUR)
     RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 150), self.flags)
 	end
+	frame:InvalidateLayout(true)
 
   local p = PUGMenu:CreateChild("DPanel")
 	p:Dock(FILL)
@@ -212,7 +219,7 @@ local function buildFrame()
 	main = PUGUtil.dColumnSheet(main, 100, frame:GetTall() / 10.2)
 	PUGMenu.frames.children.options = main
 	main:Dock(FILL)
-	main:DockMargin(0, 0, 0, 75)
+	main:DockMargin(0, 0, 0, 0)
 	local loader = main:AddSheet("Loading...", p)
 	function loader.Panel:PerformLayout()
 		-- Request server data when the menu loads.
@@ -220,25 +227,55 @@ local function buildFrame()
 		net.SendToServer()
 	end
 
-	-- Graph
-	p = PUGMenu:CreateChild("DPanel", frame)
-	p.key = 0
+	local dock = PUGMenu:CreateChild("DPanel", frame)
+	dock.height = s.h * 0.23
+	dock.width = s.w
 
-	function p:PerformLayout()
-		self:SetPos(125, frame.height - 125)
-		self:SetSize(175, 70)
+	dock:Dock(BOTTOM)
+	dock:SetHeight(dock.height)
+	dock:DockMargin(0, 0, 0, 0)
+
+	function dock:Paint(w,h)
+    RNDX.Draw(8, 0, 0, w, h, Color(0, 0, 0, 100), frame.flags)
 	end
 
+	function dock:PerformLayout(w, h)
+		self.width = w
+		self.height = h
+	end
+	dock:InvalidateLayout()
+
+	-- PUG Logo
+	p = vgui.Create("DButton", dock)
+	p:SetText( emptyStr )
+	p:SetPos(0, 0)
+	p:SetSize(dock.height, dock.height)
+	
+	local h = dock.height * 0.99
+	PUGUtil.setupButton(0, 0, h, h, p, PUGMenu.cache.icon, nil, nil, true, -3)
+
+	function p:DoClick()
+		self:Clicked()
+		surface.PlaySound("UI/buttonclick.wav")
+		surface.PlaySound(PUGMenu.cache.sound)
+	end
+
+	-- Graph
+	p = PUGMenu:CreateChild("DPanel", dock)
+	p:SetPos(dock.height, 10)
+	p:SetSize(dock.width * 0.2, dock.height * 0.80)
+	p.key = 0
+
 	function p:Paint(w, h)
-		self.key = (self.key % 175) + 1
+		self.key = (self.key % math.ceil(w)) + 1
 
 		local clft = PUGMenu.clFrameTime
 		local svpt = PUGMenu.svPhysFrames
 
 		local len = #svpt
-		local o = h - 10
+		local vh = h - 10 -- Visible Height
 
-		clft[self.key] = math.min(math.floor(engine.ServerFrameTime() * 1000), o)
+		clft[self.key] = math.min(math.floor(engine.ServerFrameTime() * 1000), vh)
 		RNDX.Draw(8, 0, 0, w, h, Color(43, 38, 38, 150), frame.flags)
 
 		if svpt and len > 2 then
@@ -246,36 +283,20 @@ local function buildFrame()
 				local n = i + 1
 				if clft and clft[n] then
 					surface.SetDrawColor(0, 255, 255, 255)
-					surface.DrawLine(i - 1, o - clft[i], i, o - clft[n])
+					surface.DrawLine(i - 1, vh - clft[i], i, vh - clft[n])
 				end
 				surface.SetDrawColor(255, 0, 0, 200)
-				surface.DrawLine(i - 1, o - svpt[i], i, o - svpt[n])
+				surface.DrawLine(i - 1, vh - svpt[i], i, vh - svpt[n])
 			end
 		end
 	end
 
-	p = vgui.Create("DButton", frame)
-	p:SetText( emptyStr )
-	p:SetPos(5, 500 - 128)
-	p:SetSize(128, 128)
-	PUGUtil.setupButton(0, 0, 127, 127, p, PUGMenu.cache.icon, nil, nil, true, -3)
-	function p:DoClick()
-		self:Clicked()
-		surface.PlaySound("UI/buttonclick.wav")
-		surface.PlaySound(PUGMenu.cache.sound)
-	end
-
-	local cmd = vgui.Create("DPanel", frame)
-	cmd:SetPaintBackground( false )
-	cmd:SetSize( 800, 50 )
-	cmd:Dock( BOTTOM )
-
-	p = vgui.Create( "DButton", cmd )
+	p = vgui.Create( "DButton", dock)
 	p:SetText( emptyStr )
 	p:SetTooltip("Request Data")
-	p:SetSize(75, 27)
-	p:Dock( RIGHT )
-	p:DockMargin( 0, 0, 5, 0 )
+	
+	p:SetPos(dock.width - 80, 5 + dock.height - 60)
+	p:SetSize(80, 50)
 
 	PUGUtil.setupButton(18.75, 9, 38, 38, p, PUGMenu.cache.download, PUGMenu.buttonColours, frame.flags)
 	function p:DoClick()
@@ -284,11 +305,13 @@ local function buildFrame()
 		net.SendToServer()
 	end
 
-	p = vgui.Create( "DButton", cmd )
+	p = vgui.Create( "DButton", dock)
 	p:SetText( emptyStr )
 	p:SetTooltip("Send Data")
-	p:SetSize(75, 25)
-	p:Dock( RIGHT )
+	
+	p:SetPos(dock.width - 80, dock.height - (50 * 2) - 10)
+	p:SetSize(80, 50)
+
 	PUGUtil.setupButton(18.75, 9, 38, 38, p, PUGMenu.cache.upload, PUGMenu.buttonColours, frame.flags)
 	function p:DoClick()
 		self:Clicked()
@@ -342,7 +365,7 @@ end)
 do
 	local k = 0
 	net.Receive("pug.PhysicsPing", function( len )
-		k = (k % 175) + 1
+		k = (k % 800) + 1
 		PUGMenu.svPhysFrames[k] = net.ReadUInt(7)
 	end)
 end

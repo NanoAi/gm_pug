@@ -53,7 +53,8 @@ u.addTimer("OOBProcessor", mod.oob.clock, 0, function()
 			local tr = util.TraceLine({
 				start = ent:LocalToWorld(ent:OBBMins()),
 				endpos = ent:LocalToWorld(ent:OBBMaxs()),
-				mask = MASK_NPCWORLDSTATIC,
+				collisiongroup = COLLISION_GROUP_WORLD,
+				output = {}
 			})
 			if not tr.HitWorld then
 				ent.PUG_OOB = {
@@ -62,7 +63,9 @@ u.addTimer("OOBProcessor", mod.oob.clock, 0, function()
 				}
 			else 
 				rollbackPosition(ent)
-				if (iter >= mod.oob.count) then break end
+				if (mod.oob.count > 0) and (iter >= mod.oob.count) then 
+					break 
+				end
 			end
 		end
 	end
@@ -82,7 +85,9 @@ if not timerSwitch then
 					}
 				else
 					rollbackPosition(ent)
-					if (iter >= mod.oob.count) then break end
+					if (mod.oob.count > 0) and (iter >= mod.oob.count) then 
+						break 
+					end
 				end
 			end
 		end

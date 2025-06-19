@@ -85,26 +85,36 @@ function u.setupMenu( menu )
 end
 
 function u.newToggleLine(parent, v)
+	local RNDX = u.internal.RNDX
 	local b = vgui.Create("DButton", parent)
 	b:SetText(emptyStr)
 	b:SetIsToggle(true)
+	b:DockMargin(0, 5, 0, 0)
 	b:Dock(TOP)
 	b:SetTooltip("Click to Toggle")
-	b:SetTall(10)
+	b:SetTall(20)
 	function b:DoClick()
 		self:Toggle()
 		v.enabled = self:GetToggle()
 	end
 	function b:Paint(w, h)
 		local ww = w * 0.95
-		local mid = w/2 - ww/2
+		local hh = h * 0.55
+		local wm = (w/2) - (ww/2)
+		local hm = (h/2) - (hh/2)
+
 		if self:GetToggle() then
-			surface.SetDrawColor(Color(0, 255, 0, 100))
-			surface.DrawRect(mid, 4, ww, 2)
+			local onColour = Color(85, 100, 85, 150)
+			RNDX.DrawOutlined(8, wm, hm, ww, hh, onColour, 3, RNDX.SHAPE_FIGMA)
+			RNDX.Draw(8, wm, hm, ww, hh, Color(0, 255, 0, 100), RNDX.SHAPE_FIGMA)
 		else
-			surface.SetDrawColor(Color(255, 0, 0, 100))
-			surface.DrawRect(mid, 4, ww, 2)
+			local onColour = Color(100, 100, 100, 100)
+			RNDX.DrawOutlined(8, wm, hm, ww, hh, onColour, 3, RNDX.SHAPE_FIGMA)
+			RNDX.Draw(8, wm, hm, ww, hh, Color(140, 10, 10, 90), RNDX.SHAPE_FIGMA)
 		end
+
+		surface.SetDrawColor(0, 0, 0, 200)
+		surface.DrawRect(0, h - 2, w, 2)
 	end
 	b:SetToggle(v.enabled)
 end
@@ -204,6 +214,7 @@ function u.setupButton(x, y, width, height, button, src, colours, flags, noBackg
 
 		if not noBackground then
 			RNDX.Draw(8, 0, 4, w - 5, h - 4, colours.base, flags)
+			RNDX.DrawOutlined(8, 0, 4, w - 5, h - 4, Color(0, 0, 0, 100), 2, flags)
 		end
 		-- w/2 = 37.5, h * 0.75 = 37.5 | Rounding to 38.
 		RNDX.DrawMaterial(0, x, y + offset, width, height, colours.image, src, RNDX.SHAPE_FIGMA)
