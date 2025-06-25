@@ -195,7 +195,6 @@ repeat
 		bypass = bypass and true or false
 		local internal = PUG.meta.ENT.ManipulateBoneScale
 		local h, i, s, b = hook.Run("PUG.ManipulateBoneScale", self, id, scale, bypass)
-		if type(scale) ~= "Vector" and type(scale) then
 
 		if h == true then
 			id = i or nil
