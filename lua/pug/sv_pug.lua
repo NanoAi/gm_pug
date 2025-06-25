@@ -195,6 +195,7 @@ repeat
 		bypass = bypass and true or false
 		local internal = PUG.meta.ENT.ManipulateBoneScale
 		local h, i, s, b = hook.Run("PUG.ManipulateBoneScale", self, id, scale, bypass)
+		if type(scale) ~= "Vector" and type(scale) then
 
 		if h == true then
 			id = i or nil
@@ -204,14 +205,28 @@ repeat
 			return
 		end
 
-		if not bypass and math.abs(scale) > 5 then
-			local clamp = scale > 0 and 5 or -5
-			local msg = string.format(l("bone.manipulate.clamp"), scale, clamp)
-			ErrorNoHaltWithStack(msg)
-			scale = clamp
+		if bypass then
+			return internal( self, id, scale )
 		end
 
-		internal( self, id, scale )
+		local struct = {}
+		local throw = false
+		for k, v in ipairs(scale:ToTable()) do
+			if not throw and math.abs(v) > 5 then
+				throw = true
+			end
+			struct[k] = (math.abs(v) > 5) and (v > 0 and 5 or -5) or v
+		end
+
+		scale = Vector(struct[1], struct[2], struct[3])
+		struct = nil
+
+		if throw then
+			local msg = string.format(l("bone.manipulate.clamp"), scale, clamp)
+			ErrorNoHaltWithStack(msg)
+		end
+
+		return internal( self, id, scale )
 	end
 until true
 

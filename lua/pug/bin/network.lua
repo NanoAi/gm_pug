@@ -51,7 +51,6 @@ hook.Add( "PlayerSay", "PUG.openMenu", function( ply, text, public )
 	end
 end)
 
-local physLag = { [0] = 0 }
 hook.Add( "Think", "PUG.PhysicsPing", function()
 	local rt = RealTime()
 	if rt > sendTime then
