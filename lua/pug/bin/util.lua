@@ -142,7 +142,9 @@ end
 
 function u.getCPPIOwner(ent)
 	if type(cppiOwner) ~= "function" then
-		print("[PUG][ERROR] We need a prop protection to function!")
+		print("[PUG][ERROR] You need to install a \"prop protection\" to run PUG!")
+		print("[PUG] We recommend FPP ( https://github.com/FPtje/Falcos-Prop-protection ).")
+		print("[PUG] #NotSponsored")
 		return
 	end
 	local owner = cppiOwner(ent)
